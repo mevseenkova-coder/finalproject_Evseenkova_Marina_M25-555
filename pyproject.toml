@@ -11,8 +11,13 @@ dependencies = [
 ]
 
 [tool.poetry]
+
+packages = [
+    { include = "valutatrade_hub", from = "." }
+]
+
 [tool.poetry.scripts]
-project = "labyrinth_game.main:main" 
+project = "main:main"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.4"

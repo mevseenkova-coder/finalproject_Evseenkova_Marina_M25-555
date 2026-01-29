@@ -1,7 +1,11 @@
+# valutatrade_hub/core/models.py
+
 import hashlib
 import json
 from datetime import datetime
 from typing import Dict, List, Optional
+
+# реализация классов
 
 class User:
     def __init__(self, user_id: int, username: str, password: str, salt: str, registration_date: datetime):
@@ -158,12 +162,11 @@ class Wallet:
         if amount <= 0:
             raise ValueError("Сумма должна быть положительной.")
 
-    # === JSON сериализация ===
     def to_dict(self) -> Dict:
         """Подготовка к сохранению в JSON"""
         return {
             "currency_code": self._currency_code,
-            "balance": self.balance
+            "balance": float(self.balance)  # ✅ Превращаем Decimal в float
         }
 
     @classmethod
@@ -316,3 +319,7 @@ class Portfolio:
         for code, wallet_data in data['wallets'].items():
             wallets[code] = Wallet.from_dict(wallet_data)
         return cls(user_id=data['user_id'], wallets=wallets)
+
+    def __repr__(self):
+        wallets_str = ", ".join(f"{code}: {wallet.balance}" for code, wallet in self.wallets.items())
+        return f"Portfolio(user_id={self.user_id}, wallets={{{wallets_str}}})"

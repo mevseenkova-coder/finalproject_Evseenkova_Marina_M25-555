@@ -1,15 +1,24 @@
-# cli/interface.py
+# valutatrade_hub/cli/interface.py
 
+import argparse
+from datetime import datetime, timedelta
+import json
+import os
+from typing import Dict, Optional
+from valutatrade_hub.core.usecases import *
+from valutatrade_hub.core.models import User, Portfolio
 import sys
-from typing import Optional
 
-from core.usecases import (
+# команды
+
+'''
+from valutatrade_hub.core.usecases import (
     register_user, login, get_portfolio, update_portfolio,
     get_exchange_rate
 )
+'''
 
 current_user: Optional['User'] = None
-
 
 def print_help():
     print("""
@@ -127,6 +136,10 @@ def cmd_register(args):
     portfolios[user_id] = Portfolio(user_id=user_id)
     save_portfolios(portfolios)
 
+    global current_user
+    current_user = user  # ✅ сохраняем объект User
+    print(f"🔧 Регистрация успешна. Текущий пользователь: {current_user.username} (id={current_user.user_id})")
+
     # Успешный ответ
     print(f"Пользователь '{username}' зарегистрирован (id={user_id}). Войдите: login --username {username} --password ****")
 
@@ -225,7 +238,8 @@ def cmd_show_portfolio(args):
         return
 
     # Загружаем портфель пользователя
-    portfolio = get_portfolio(current_user.user_id)
+    # portfolio = get_portfolio(current_user.user_id)
+    portfolio = get_portfolio(current_user)  # ✅ объект User
 
     # Получаем кошельки
     wallets = portfolio.wallets
@@ -324,7 +338,8 @@ def cmd_buy(args):
         return
 
     # Загружаем портфель
-    portfolio = get_portfolio(current_user.user_id)
+    # portfolio = get_portfolio(current_user.user_id)
+    portfolio = get_portfolio(current_user)
 
     # Получаем курс в USD
     rates = load_rates()
@@ -337,15 +352,18 @@ def cmd_buy(args):
     wallet = portfolio.get_wallet(currency)
     old_balance = wallet.balance if wallet else 0.0
 
-    # Выполняем покупку (создаёт кошелёк при необходимости)
+    # Выполняем покупку (кошелёк создаётся автоматически при необходимости)
     try:
         portfolio.buy_currency(currency, amount, rate)
-        update_portfolio(portfolio)
+        update_portfolio(portfolio)  # Сохраняем изменения в JSON
+        print(f"✅ Успешно куплено {amount} {currency} по курсу {rate} USD.")
     except ValueError as e:
-        print(f"Ошибка при покупке: {e}")
+        # Ожидаемые ошибки: не хватает средств, нет USD и т.п.
+        print(f"❌ Ошибка при покупке: {e}")
         return
     except Exception as e:
-        print(f"Неожиданная ошибка: {e}")
+        # Неожиданные ошибки (например, ошибка в логике или системе)
+        print(f"🚨 Неожиданная ошибка: {type(e).__name__}: {e}")
         return
 
     # Формируем отчёт
@@ -602,7 +620,8 @@ def cmd_get_rate(args):
     print(f"Обратный курс {to_curr}→{from_curr}: {reverse_rate:.2f}")
 
 def main():
-    print("🚀 Добро пожаловать в CryptoWallet CLI!")
+    # CLI-интерфейс
+    print("Добро пожаловать в ValutaTrade Hub!")
     print_help()
 
     global current_user

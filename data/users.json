@@ -1,9 +1,16 @@
 [
-{
- "user_id": 1,
- "username": "alice",
- "hashed_password": "3e2a19...",
- "salt": "x5T9!",
- "registration_date": "2025-10-09T12:00:00"
-}
+  {
+    "user_id": 2,
+    "username": "Марина",
+    "hashed_password": "ddf9eb0b31ab06ff850c35ce963eb88f4d15d6184ff2a90ab2db31d0bc8d2d1a",
+    "salt": "y0JEeZTXeVA",
+    "registration_date": "2026-01-29T01:10:12.602892"
+  },
+  {
+    "user_id": 3,
+    "username": "alice",
+    "hashed_password": "617cd220449dd9d2d8961cef780156d0e1d7a92c5848caef5edce784eb64acc7",
+    "salt": "EFb57kKQyw8",
+    "registration_date": "2026-01-29T01:41:34.189002"
+  }
 ]
