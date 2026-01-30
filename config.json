@@ -1,0 +1,7 @@
+{
+  "data_path": "data",
+  "rates_ttl_seconds": 300,
+  "base_currency": "USD",
+  "log_level": "INFO",
+  "log_file": "logs/app.log"
+}

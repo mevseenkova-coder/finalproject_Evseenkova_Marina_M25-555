@@ -1,0 +1,10 @@
+{
+  "BTC": {
+    "currency_code": "BTC",
+    "balance": 0.04000000000000001
+  },
+  "USD": {
+    "currency_code": "USD",
+    "balance": 1449.5
+  }
+}

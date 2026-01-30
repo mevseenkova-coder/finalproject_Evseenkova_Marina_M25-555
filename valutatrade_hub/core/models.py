@@ -3,10 +3,108 @@
 import hashlib
 import json
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
+from valutatrade_hub.core.currencies import get_currency
 
 # реализация классов
+# ДОПОЛНИТЬ: приватные/защищенные поля; точки интеграции
 
+class User:
+    def __init__(
+        self,
+        user_id: int,
+        username: str,
+        hashed_password: str,
+        salt: str,
+        registration_date: datetime
+    ):
+        self._user_id = user_id
+        self._username = username.strip()
+        self._hashed_password = hashed_password
+        self._salt = salt
+        self._registration_date = registration_date
+
+        # Валидация
+        if not self._username:
+            raise ValueError("Имя пользователя не может быть пустым.")
+
+    # === Геттеры ===
+    @property
+    def user_id(self) -> int:
+        return self._user_id
+
+    @property
+    def username(self) -> str:
+        return self._username
+
+    @username.setter
+    def username(self, value: str):
+        if not value or not value.strip():
+            raise ValueError("Имя пользователя не может быть пустым.")
+        self._username = value.strip()
+
+    @property
+    def hashed_password(self) -> str:
+        return self._hashed_password
+
+    @property
+    def salt(self) -> str:
+        return self._salt
+
+    @property
+    def registration_date(self) -> datetime:
+        return self._registration_date
+
+    # === Методы ===
+    def verify_password(self, password: str) -> bool:
+        """Проверяет, совпадает ли пароль с хэшем."""
+        if len(password) < 4:
+            return False
+        salted_password = password + self._salt
+        pwd_hash = hashlib.sha256(salted_password.encode('utf-8')).hexdigest()
+        return pwd_hash == self._hashed_password
+
+    def change_password(self, new_password: str) -> None:
+        """Изменяет пароль — вызывается из usecase, после проверки старого."""
+        if len(new_password) < 4:
+            raise ValueError("Пароль должен быть не короче 4 символов.")
+        salted_password = new_password + self._salt
+        self._hashed_password = hashlib.sha256(salted_password.encode('utf-8')).hexdigest()
+
+    def get_user_info(self) -> Dict[str, Any]:
+        """Возвращает публичную информацию о пользователе."""
+        return {
+            "user_id": self._user_id,
+            "username": self._username,
+            "registration_date": self._registration_date.isoformat()
+        }
+
+    # === JSON сериализация ===
+    def to_dict(self) -> Dict[str, Any]:
+        """Подготовка к сохранению в JSON."""
+        return {
+            "user_id": self._user_id,
+            "username": self._username,
+            "hashed_password": self._hashed_password,
+            "salt": self._salt,
+            "registration_date": self._registration_date.isoformat()
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'User':
+        """Создаёт User из словаря (например, из JSON)."""
+        return cls(
+            user_id=data['user_id'],
+            username=data['username'],
+            hashed_password=data['hashed_password'],
+            salt=data['salt'],
+            registration_date=datetime.fromisoformat(data['registration_date'])
+        )
+
+    def __repr__(self) -> str:
+        return f"User(id={self._user_id}, username={self._username})"
+
+'''
 class User:
     def __init__(self, user_id: int, username: str, password: str, salt: str, registration_date: datetime):
         self._user_id = user_id
@@ -105,6 +203,7 @@ class User:
         user._salt = data['salt']
         user._registration_date = datetime.fromisoformat(data['registration_date'])
         return user
+'''
 
 class Wallet:
     def __init__(self, currency_code: str, initial_balance: float = 0.0):
@@ -144,7 +243,8 @@ class Wallet:
         """Снятие средств, если достаточно средств"""
         self._validate_amount(amount)
         if amount > self.balance:
-            raise ValueError(f"Недостаточно средств. Доступно: {self.balance} {self._currency_code}")
+            # raise ValueError(f"Недостаточно средств. Доступно: {self.balance} {self._currency_code}")
+            raise InsufficientFundsError(available=self.balance, required=amount, code=self._currency_code)
         self.balance -= amount
         print(f"Снятие: -{amount} {self._currency_code}. Текущий баланс: {self.balance} {self._currency_code}")
 
@@ -165,7 +265,7 @@ class Wallet:
     def to_dict(self) -> Dict:
         """Подготовка к сохранению в JSON"""
         return {
-            "currency_code": self._currency_code,
+            "currency_code": self.currency_code,
             "balance": float(self.balance)  # ✅ Превращаем Decimal в float
         }
 
@@ -287,6 +387,12 @@ class Portfolio:
         """
         currency_code = currency_code.strip().upper()
 
+        # Проверяем, поддерживается ли валюта вообще
+        try:
+            get_currency(currency_code)
+        except CurrencyNotFoundError:
+            raise CurrencyNotFoundError(currency_code)  # пробрасываем дальше
+
         wallet = self.get_wallet(currency_code)
         if not wallet:
             raise ValueError(f"Нет кошелька для валюты {currency_code}.")
@@ -303,7 +409,7 @@ class Portfolio:
         usd_wallet.deposit(revenue)
 
         print(f"Продано {amount} {currency_code} по цене {price_in_usd} USD за единицу.")
-
+           
     # === JSON сериализация ===
     def to_dict(self) -> Dict:
         """Подготовка к сохранению в JSON"""

@@ -8,7 +8,15 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "toml (>=0.10.2,<0.11.0)"
 ]
+
+[tool.valutatrade]
+data_path = "data"
+rates_ttl_seconds = 300
+base_currency = "USD"
+log_level = "INFO"
+log_file = "logs/app.log"
 
 [tool.poetry]
 

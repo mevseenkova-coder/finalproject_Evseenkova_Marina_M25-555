@@ -3,10 +3,16 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from valutatrade_hub.core.models import User, Portfolio, Wallet
+from valutatrade_hub.decorators import log_action
+from valutatrade_hub.core.exceptions import InsufficientFundsError, CurrencyNotFoundError, UserAlreadyExistsError
+from valutatrade_hub.infra.database import DatabaseManager
+from valutatrade_hub.infra.settings import SettingsLoader
+from hashlib import pbkdf2_hmac
 
 # бизнес-логика
+# ДОПОЛНИТЬ: buy/sell/get-rate с исключениями и логированием
 
 DATA_DIR = "data"
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
@@ -236,6 +242,7 @@ def load_rates() -> Dict[str, float]:
 
     return rates
 
+'''
 def register_user(username: str, password: str) -> User:
     users = load_users()
     user_id = max(users.keys(), default=0) + 1
@@ -249,14 +256,71 @@ def register_user(username: str, password: str) -> User:
     users[user_id] = user
     save_users(users)
     return user
+'''
 
+@log_action("REGISTER", verbose=False)
+def register_user(username: str, password: str) -> User:
+    """
+    Регистрация нового пользователя с хэшированием пароля.
+    :param username: Имя пользователя
+    :param password: Пароль (будет захэширован)
+    :return: Объект User
+    """
+    db = DatabaseManager()
+    users: List[User] = db.load_users()
 
+    # Проверка: пользователь уже существует?
+    if any(u.username == username for u in users):
+        raise UserAlreadyExistsError(username)
+
+    if len(password) < 4:
+        raise ValueError("Пароль должен быть не короче 4 символов.")
+    username = username.strip()
+    
+    # Генерация соли
+    salt = os.urandom(32)  # 32 байта — криптостойко
+
+    # Хэширование пароля: PBKDF2 с 100_000 итераций
+    pwd_hash = pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100_000)
+
+    # Генерация ID
+    user_id = max((u.user_id for u in users), default=0) + 1
+
+    # Создаём пользователя
+    # В models.User пароль хранится как hashed_password, соль — отдельно
+    new_user = User(
+        user_id=user_id,
+        username=username,
+        hashed_password=pwd_hash.hex(),  # сохраняем как hex-строку
+        salt=salt.hex(),                # соль тоже в hex
+        registration_date=datetime.now()
+    )
+
+    # Сохраняем
+    db.save_user(new_user)
+    return new_user
+    
+'''
 def login(username: str, password: str) -> Optional[User]:
     users = load_users()
     for user in users.values():
         if user.username == username and user.verify_password(password):
             return user
     return None
+'''
+
+@log_action("LOGIN", verbose=False)
+def login(username: str, password: str) -> User:
+    db = DatabaseManager()
+    users = db.load_users()
+
+    for user in users:
+        if user.username == username:
+            if user.verify_password(password):
+                return user
+            else:
+                raise AuthenticationError("Неверный пароль")
+    raise AuthenticationError("Пользователь не найден")
 
 '''
 def get_portfolio(user_id: int) -> Portfolio:
@@ -320,7 +384,156 @@ def update_portfolio(portfolio: Portfolio):
     portfolios[portfolio.user_id] = portfolio
     save_portfolios(portfolios)
 
-
+'''
 def get_exchange_rate(currency: str) -> Optional[float]:
     rates = load_rates()
     return rates.get(currency.upper())
+'''
+
+'''
+def get_exchange_rate(from_code: str, to_code: str) -> float:
+    settings = SettingsLoader()
+    db = DatabaseManager()
+
+    # Используем TTL из конфига
+    ttl = settings.get("rates_ttl_seconds", 300)
+    rates = db.load_rates(ttl=ttl)  # ← например
+
+    if from_code not in rates:
+        raise CurrencyNotFoundError(from_code)
+    if to_code not in rates:
+        raise CurrencyNotFoundError(to_code)
+
+    return rates[from_code] / rates[to_code]
+'''
+
+def get_exchange_rate(from_code: str, to_code: str) -> float:
+    """
+    Получить курс обмена: 1 единица from_code = ? единиц to_code.
+    Расчёт идёт через USD (например: BTC → EUR = BTC→USD / EUR→USD).
+    """
+    settings = SettingsLoader()
+    db = DatabaseManager()
+
+    # Загружаем курсы (с логикой TTL внутри database.py)
+    rates = db.load_rates()
+
+    from_code = from_code.strip().upper()
+    to_code = to_code.strip().upper()
+
+    # Валидация: валюта поддерживается?
+    if from_code not in rates:
+        raise CurrencyNotFoundError(from_code)
+    if to_code not in rates:
+        raise CurrencyNotFoundError(to_code)
+
+    # Расчёт через USD
+    rate_from_usd = rates[from_code]  # сколько USD стоит 1 from_code
+    rate_to_usd = rates[to_code]      # сколько USD стоит 1 to_code
+
+    # Курс: 1 from_code = ? to_code
+    exchange_rate = rate_from_usd / rate_to_usd
+
+    return exchange_rate
+
+'''
+@log_action("BUY", verbose=True)
+def buy_currency(portfolio, currency_code: str, amount: float, rate: float) -> None:
+    usd_cost = amount * rate
+    usd_wallet = portfolio.get_wallet('USD')
+    if not usd_wallet or usd_wallet.balance < usd_cost:
+        raise InsufficientFundsError(available=usd_wallet.balance if usd_wallet else 0, required=usd_cost, code='USD')
+
+    portfolio.add_currency(currency_code, amount)
+    usd_wallet.withdraw(usd_cost)
+'''
+
+@log_action("BUY", verbose=True)
+def buy(user_id: int, currency_code: str, amount: float) -> None:
+    """Покупка валюты."""
+    if amount <= 0:
+        raise ValueError("Количество должно быть больше 0.")
+
+    db = DatabaseManager()
+    portfolio = db.load_portfolio(user_id)
+
+    rates = db.load_rates()
+    if currency_code not in rates:
+        raise CurrencyNotFoundError(currency_code)
+
+    rate = rates[currency_code]  # курс к USD
+    usd_cost = amount * rate
+
+    usd_wallet = portfolio.get_wallet("USD")
+    if not usd_wallet or usd_wallet.balance < usd_cost:
+        raise InsufficientFundsError(
+            available=usd_wallet.balance if usd_wallet else 0,
+            required=usd_cost,
+            code="USD"
+        )
+
+    # Пополняем валюту (кошелёк создаётся автоматически)
+    target_wallet = portfolio.get_wallet(currency_code)
+    if not target_wallet:
+        target_wallet = Wallet(currency_code, 0.0)
+        portfolio.add_wallet(target_wallet)
+    target_wallet.deposit(amount)
+
+    # Снимаем USD
+    usd_wallet.withdraw(usd_cost)
+
+    db.save_portfolio(portfolio)
+
+'''
+@log_action("SELL", verbose=True)
+def sell_currency(portfolio, currency_code: str, amount: float, rate: float) -> None:
+    wallet = portfolio.get_wallet(currency_code)
+    if not wallet:
+        raise ValueError(f"Нет кошелька для {currency_code}")
+    wallet.withdraw(amount)
+
+    usd_wallet = portfolio.get_wallet('USD')
+    if not usd_wallet:
+        portfolio.add_currency('USD', 0.0)
+        usd_wallet = portfolio.get_wallet('USD')
+
+    revenue = amount * rate
+    usd_wallet.deposit(revenue)
+'''
+
+@log_action("SELL", verbose=True)
+def sell(user_id: int, currency_code: str, amount: float) -> float:
+    """Продажа валюты. Возвращает выручку в USD."""
+    if amount <= 0:
+        raise ValueError("Количество должно быть больше 0.")
+
+    db = DatabaseManager()
+    portfolio = db.load_portfolio(user_id)
+
+    wallet = portfolio.get_wallet(currency_code)
+    if not wallet or wallet.balance < amount:
+        raise InsufficientFundsError(
+            available=wallet.balance if wallet else 0,
+            required=amount,
+            code=currency_code
+        )
+
+    rates = db.load_rates()
+    if currency_code not in rates:
+        raise CurrencyNotFoundError(currency_code)
+
+    rate = rates[currency_code]
+    revenue_usd = amount * rate
+
+    # Снимаем валюту
+    wallet.withdraw(amount)
+
+    # Пополняем USD
+    usd_wallet = portfolio.get_wallet("USD")
+    if not usd_wallet:
+        usd_wallet = Wallet("USD", 0.0)
+        portfolio.add_wallet(usd_wallet)
+    usd_wallet.deposit(revenue_usd)
+
+    db.save_portfolio(portfolio)
+    return revenue_usd

@@ -4,10 +4,27 @@ import argparse
 from datetime import datetime, timedelta
 import json
 import os
-from typing import Dict, Optional
-from valutatrade_hub.core.usecases import *
+from typing import Dict, Optional, Any
 from valutatrade_hub.core.models import User, Portfolio
 import sys
+import secrets
+
+# from valutatrade_hub.core.usecases import *
+from valutatrade_hub.core.usecases import (
+    buy as usecase_buy,
+    sell as usecase_sell,
+    get_exchange_rate as usecase_get_rate
+)
+
+from valutatrade_hub.core.exceptions import CurrencyNotFoundError, ApiRequestError
+from valutatrade_hub.core.currencies import get_currency
+from valutatrade_hub.infra.settings import SettingsLoader
+from valutatrade_hub.infra.database import DatabaseManager
+
+# Константы
+DATA_DIR = "data"
+RATES_FILE = os.path.join(DATA_DIR, "rates.json")
+CACHE_TTL_SECONDS = 300  # 5 минут
 
 # команды
 
@@ -115,7 +132,6 @@ def cmd_register(args):
     user_id = max(users.keys(), default=0) + 1
 
     # Генерация соли
-    import secrets
     salt = secrets.token_urlsafe(8)  # например, 'x5T9aBc'
 
     # Создаём пользователя
@@ -295,6 +311,7 @@ def cmd_buy(args):
         print(f"Ошибка: {e}")
 '''
 
+'''
 def cmd_buy(args):
     global current_user
 
@@ -376,6 +393,60 @@ def cmd_buy(args):
     print("Изменения в портфеле:")
     print(f"  {currency}: было {old_balance:,.4f} → стало {new_balance:,.4f}")
     print(f"Оценочная стоимость покупки: {total_cost_usd:,.2f} USD")
+'''
+
+def cmd_buy(args):
+    global current_user
+
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    try:
+        parsed = parse_args(args)
+    except ValueError as e:
+        print(e)
+        print("Использование: buy --currency <валюта> --amount <число>")
+        return
+
+    currency = parsed.get("currency")
+    amount_str = parsed.get("amount")
+
+    if not currency:
+        print("Ошибка: параметр --currency обязателен.")
+        return
+    if not amount_str:
+        print("Ошибка: параметр --amount обязателен.")
+        return
+
+    currency = currency.strip().upper()
+    try:
+        amount = float(amount_str)
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        print("'amount' должен быть положительным числом")
+        return
+
+    # Получаем курс через usecase — он уже проверит валюту
+    try:
+        rate = usecase_get_rate(currency, "USD")
+        usd_cost = amount * rate
+        print(f"🔍 Курс {currency}/USD: {rate:.6f} → Стоимость: {usd_cost:.2f} USD")
+        confirm = input(f"🛒 Подтвердите покупку {amount} {currency} за {usd_cost:.2f} USD? (y/n): ")
+        if confirm.lower() != 'y':
+            print("ℹ️ Покупка отменена.")
+            return
+
+        usecase_buy(current_user.user_id, currency, amount)
+        print(f"✅ Успешно куплено: {amount} {currency}")
+
+    except CurrencyNotFoundError as e:
+        print(f"❌ Валюта '{e.code}' не поддерживается.")
+    except InsufficientFundsError as e:
+        print(f"❌ Недостаточно средств: доступно {e.available:.2f} USD, требуется {e.required:.2f} USD")
+    except Exception as e:
+        print(f"❌ Ошибка при покупке: {e}")
 
 '''
 def cmd_sell(args):
@@ -399,6 +470,140 @@ def cmd_sell(args):
         print(f"Ошибка: {e}")
 '''
 
+'''
+def cmd_sell(args):
+    global current_user
+
+    # Проверка логина
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    # Парсим аргументы
+    try:
+        parsed = parse_args(args)
+    except ValueError as e:
+        print(e)
+        print("Использование: sell --currency <валюта> --amount <число>")
+        return
+
+    currency = parsed.get("currency")
+    amount_str = parsed.get("amount")
+
+    # Валидация аргументов
+    if not currency:
+        print("Ошибка: параметр --currency обязателен.")
+        return
+    if not amount_str:
+        print("Ошибка: параметр --amount обязателен.")
+        return
+
+    # Валидация currency
+    currency = currency.strip().upper()
+    if not currency.isalpha() or not (2 <= len(currency) <= 5):
+        print(f"'{currency}' — некорректный код валюты")
+        return
+
+    # Валидация amount
+    try:
+        amount = float(amount_str)
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        print("'amount' должен быть положительным числом")
+        return
+
+    # Загружаем портфель
+    portfolio = get_portfolio(current_user.user_id)
+
+    # Проверяем, существует ли кошелёк
+    wallet = portfolio.get_wallet(currency)
+    if not wallet:
+        print(f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся автоматически при первой покупке.")
+        return
+
+    # Получаем курс
+    try:
+        rates = load_rates()
+        rate = rates[currency]  # ← может вызвать KeyError
+    except KeyError:
+        print(f"Курс для {currency} недоступен. Повторите попытку позже.")
+        return
+
+    # Выполняем продажу — бизнес-логика в портфеле
+    try:
+        portfolio.sell_currency(currency, amount, rate)
+        update_portfolio(portfolio)  # сохраняем изменения
+    except InsufficientFundsError as e:
+        print(e)  # ← единообразное сообщение: "Недостаточно средств: доступно ..."
+        return
+    except Exception as e:
+        print(f"Неожиданная ошибка при продаже: {e}")
+        return
+
+    # Формируем отчёт
+    new_balance = wallet.balance  # ← актуальное значение после withdraw
+    revenue_usd = amount * rate
+
+    print(f"Продажа выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} USD/{currency}")
+    print("Изменения в портфеле:")
+    print(f"  {currency}: было {new_balance + amount:,.4f} → стало {new_balance:,.4f}")
+    print(f"Оценочная выручка: {revenue_usd:,.2f} USD")
+'''
+
+def cmd_sell(args):
+    global current_user
+
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    try:
+        parsed = parse_args(args)
+    except ValueError as e:
+        print(e)
+        print("Использование: sell --currency <валюта> --amount <число>")
+        return
+
+    currency = parsed.get("currency")
+    amount_str = parsed.get("amount")
+
+    if not currency:
+        print("Ошибка: параметр --currency обязателен.")
+        return
+    if not amount_str:
+        print("Ошибка: параметр --amount обязателен.")
+        return
+
+    currency = currency.strip().upper()
+    try:
+        amount = float(amount_str)
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        print("'amount' должен быть положительным числом")
+        return
+
+    try:
+        rate = usecase_get_rate(currency, "USD")
+        revenue_usd = amount * rate
+        print(f"🔍 Курс {currency}/USD: {rate:.6f} → Выручка: {revenue_usd:.2f} USD")
+        confirm = input(f"💰 Подтвердите продажу {amount} {currency} за {revenue_usd:.2f} USD? (y/n): ")
+        if confirm.lower() != 'y':
+            print("ℹ️ Продажа отменена.")
+            return
+
+        revenue = usecase_sell(current_user.user_id, currency, amount)
+        print(f"✅ Продано: {amount} {currency} → получено {revenue:.2f} USD")
+
+    except CurrencyNotFoundError as e:
+        print(f"❌ Валюта '{e.code}' не поддерживается.")
+    except InsufficientFundsError as e:
+        print(f"❌ Недостаточно {currency}: доступно {e.available:.6f}, требуется {e.required:.6f}")
+    except Exception as e:
+        print(f"❌ Ошибка при продаже: {e}")
+
+'''
 def cmd_sell(args):
     global current_user
 
@@ -481,6 +686,7 @@ def cmd_sell(args):
     print("Изменения в портфеле:")
     print(f"  {currency}: было {old_balance:,.4f} → стало {new_balance:,.4f}")
     print(f"Оценочная выручка: {revenue_usd:,.2f} USD")
+'''
 
 '''
 def cmd_get_rate(args):
@@ -495,16 +701,8 @@ def cmd_get_rate(args):
         print(f"❌ Курс для {currency} не найден.")
 '''
 
-from datetime import datetime, timedelta
-import json
-import os
-
-# Константы
-DATA_DIR = "data"
-RATES_FILE = os.path.join(DATA_DIR, "rates.json")
-CACHE_TTL_SECONDS = 300  # 5 минут
-
-
+'''
+# Перенос в модуль database.py
 def load_rates_with_timestamp() -> tuple[dict, datetime]:
     """Загружает курсы и время последнего обновления"""
     if not os.path.exists(RATES_FILE):
@@ -521,7 +719,7 @@ def load_rates_with_timestamp() -> tuple[dict, datetime]:
     rates = {k: v for k, v in data.items() if k != "last_updated"}
     last_updated = datetime.fromisoformat(data["last_updated"])
     return rates, last_updated
-
+'''
 
 def save_rates_with_timestamp(rates: dict):
     """Сохраняет курсы с отметкой времени"""
@@ -546,7 +744,94 @@ def fetch_rates_stub() -> dict:
         "SOL": 145.70,
     }
 
+# valutatrade_hub/cli/interface.py
+from datetime import datetime, timedelta
+from typing import Dict, Any
 
+from valutatrade_hub.core.exceptions import CurrencyNotFoundError, ApiRequestError
+from valutatrade_hub.core.currencies import get_currency
+from valutatrade_hub.infra.settings import SettingsLoader
+from valutatrade_hub.infra.database import DatabaseManager
+
+'''
+def cmd_get_rate(args):
+    settings = SettingsLoader()
+    db = DatabaseManager()
+
+    try:
+        # Парсим аргументы
+        parsed = parse_args(args)
+        from_curr = parsed.get("from")
+        to_curr = parsed.get("to")
+
+        if not from_curr:
+            raise ValueError("Параметр --from обязателен.")
+        if not to_curr:
+            raise ValueError("Параметр --to обязателен.")
+
+        from_curr = from_curr.strip().upper()
+        to_curr = to_curr.strip().upper()
+
+        # Валидация через реестр валют → выбросит CurrencyNotFoundError при ошибке
+        get_currency(from_curr)
+        get_currency(to_curr)
+
+        # Загружаем курсы и время последнего обновления
+        rates, last_updated = db.load_rates_with_timestamp()
+        now = datetime.now()
+
+        # Проверяем TTL из конфига
+        ttl = settings.get("rates_ttl_seconds", 300)
+        if now - last_updated > timedelta(seconds=ttl):
+            print("🔄 Курсы устарели — обновляем из источника...")
+            try:
+                fresh_rates = fetch_rates_stub()  # ← здесь будет Parser Service
+                db.save_rates_with_timestamp(fresh_rates)
+                rates = fresh_rates
+                last_updated = now
+                print("✅ Курсы успешно обновлены.")
+            except Exception as e:
+                raise ApiRequestError(f"Не удалось обновить курсы: {str(e)}")
+
+        # Проверяем наличие курсов
+        if from_curr not in rates:
+            raise CurrencyNotFoundError(from_curr)
+        if to_curr not in rates:
+            raise CurrencyNotFoundError(to_curr)
+
+        # Расчёт курса через USD
+        rate_from_usd = rates[from_curr]
+        rate_to_usd = rates[to_curr]
+        forward_rate = rate_from_usd / rate_to_usd
+        reverse_rate = 1 / forward_rate
+
+        updated_str = last_updated.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Вывод
+        print(f"Курс {from_curr}→{to_curr}: {forward_rate:.8f} (обновлено: {updated_str})")
+        print(f"Обратный курс {to_curr}→{from_curr}: {reverse_rate:.8f}")
+
+    except ValueError as e:
+        print(e)
+        print("Использование: get-rate --from <валюта> --to <валюта>")
+        return
+
+    except CurrencyNotFoundError as e:
+        print(e)
+        print("Поддерживаемые валюты: USD, EUR, BTC, ETH, RUB, GBP, BTS")
+        return
+
+    except ApiRequestError as e:
+        print(e)
+        print("Используем кешированные курсы. Повторите запрос позже.")
+        return
+
+    except Exception as e:
+        print(f"Неожиданная ошибка: {e}")
+        return
+'''
+
+'''
 def cmd_get_rate(args):
     try:
         parsed = parse_args(args)
@@ -618,6 +903,37 @@ def cmd_get_rate(args):
     # Вывод
     print(f"Курс {from_curr}→{to_curr}: {forward_rate:.8f} (обновлено: {updated_str})")
     print(f"Обратный курс {to_curr}→{from_curr}: {reverse_rate:.2f}")
+'''
+
+def cmd_get_rate(args):
+    try:
+        parsed = parse_args(args)
+        from_curr = parsed.get("from")
+        to_curr = parsed.get("to")
+
+        if not from_curr:
+            raise ValueError("Параметр --from обязателен.")
+        if not to_curr:
+            raise ValueError("Параметр --to обязателен.")
+
+        from_curr = from_curr.strip().upper()
+        to_curr = to_curr.strip().upper()
+
+        # ← Вся валидация и TTL — внутри usecase
+        rate = usecase_get_rate(from_curr, to_curr)
+
+        print(f"💱 {from_curr}/{to_curr} = {rate:.8f}")
+        print(f"🔄 1 {from_curr} = {rate:.8f} {to_curr}")
+
+    except ValueError as e:
+        print(e)
+        print("Использование: get-rate --from <валюта> --to <валюта>")
+    except CurrencyNotFoundError as e:
+        print(f"❌ Валюта '{e.code}' не поддерживается.")
+    except ApiRequestError as e:
+        print(f"🌐 Ошибка API: {e}")
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
 
 def main():
     # CLI-интерфейс
