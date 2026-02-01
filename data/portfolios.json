@@ -91,5 +91,31 @@
         "balance": 1000.0
       }
     }
+  },
+  {
+    "user_id": 13,
+    "wallets": {
+      "USD": {
+        "currency_code": "USD",
+        "balance": 995.7965
+      },
+      "EUR": {
+        "currency_code": "EUR",
+        "balance": 5.0
+      }
+    }
+  },
+  {
+    "user_id": 14,
+    "wallets": {
+      "USD": {
+        "currency_code": "USD",
+        "balance": 663.72
+      },
+      "EUR": {
+        "currency_code": "EUR",
+        "balance": 400.0
+      }
+    }
   }
 ]
