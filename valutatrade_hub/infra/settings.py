@@ -2,8 +2,19 @@
 
 import json
 import os
+from pathlib import Path
 from typing import Any, Dict, Optional
-import toml  # pip install toml
+import toml
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    data_dir: str = "data"
+    users_file: str = "data/users.json"
+    portfolios_file: str = "data/portfolios.json"
+    rates_file: str = "data/rates.json"
+
+    class Config:
+        env_file = ".env"
 
 # Singleton SettingsLoader (конфигурация)
 
@@ -33,6 +44,38 @@ class SettingsLoader:
 
     def _load_settings(self):
         """Загружает настройки из доступных источников."""
+        # Определяем корень проекта — две папки вверх от __file__
+        project_root = Path(__file__).parent.parent.parent  # valutatrade_hub → finalproject_...
+
+        # Приоритет 1: config.json в корне
+        config_path = project_root / "config.json"
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                self._settings = json.load(f)
+            return
+
+        # Приоритет 2: pyproject.toml
+        toml_path = project_root / "pyproject.toml"
+        if toml_path.exists():
+            with open(toml_path, "r", encoding="utf-8") as f:
+                data = toml.load(f)
+            tool_config = data.get("tool", {}).get("valutatrade", {})
+            if tool_config:
+                self._settings = tool_config
+                return
+
+        # Приоритет 3: значения по умолчанию
+        self._settings = {
+            "data_dir": str(project_root / "data"),
+            "rates_ttl_seconds": 300,
+            "base_currency": "USD",
+            "log_level": "INFO",
+            "log_file": str(project_root / "logs" / "app.log")
+        }
+
+    '''
+    def _load_settings(self):
+        """Загружает настройки из доступных источников."""
         # Приоритет 1: config.json
         if os.path.exists("config.json"):
             with open("config.json", "r", encoding="utf-8") as f:
@@ -50,17 +93,18 @@ class SettingsLoader:
 
         # Приоритет 3: значения по умолчанию
         self._settings = {
-            "data_path": "data",
+            "data_dir": "data",
             "rates_ttl_seconds": 300,
             "base_currency": "USD",
             "log_level": "INFO",
             "log_file": "logs/app.log"
         }
+    '''
 
     def get(self, key: str, default: Any = None) -> Any:
         """
         Получить значение по ключу.
-        :param key: имя параметра (например, 'data_path')
+        :param key: имя параметра (например, 'data_dir')
         :param default: значение по умолчанию
         :return: значение из конфига или default
         """

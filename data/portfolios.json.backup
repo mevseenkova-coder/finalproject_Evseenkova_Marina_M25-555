@@ -85,11 +85,6 @@
   },
   {
     "user_id": 12,
-    "wallets": {
-      "USD": {
-        "currency_code": "USD",
-        "balance": 1000.0
-      }
-    }
+    "wallets": {}
   }
 ]

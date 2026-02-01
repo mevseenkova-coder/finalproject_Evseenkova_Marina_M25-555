@@ -2,8 +2,8 @@
 
 import json
 import os
-from datetime import datetime
-from typing import Dict, Optional, List
+from datetime import datetime, timezone, timedelta
+from typing import Dict, Optional, List, Any
 from valutatrade_hub.core.models import User, Portfolio, Wallet
 from valutatrade_hub.decorators import log_action
 from valutatrade_hub.core.exceptions import InsufficientFundsError, CurrencyNotFoundError, UserAlreadyExistsError
@@ -19,7 +19,7 @@ USERS_FILE = os.path.join(DATA_DIR, "users.json")
 PORTFOLIOS_FILE = os.path.join(DATA_DIR, "portfolios.json")
 RATES_FILE = os.path.join(DATA_DIR, "rates.json")
 
-
+'''
 def load_users() -> Dict[int, User]:
     if not os.path.exists(USERS_FILE):
         return {}
@@ -42,13 +42,13 @@ def load_users() -> Dict[int, User]:
             continue
 
     return users
-
-
+'''
+'''
 def save_users(users: Dict[int, User]):
     data = [user.to_dict() for user in users.values()]
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
+'''
 '''
 def load_portfolios() -> Dict[int, Portfolio]:
     if not os.path.exists(PORTFOLIOS_FILE):
@@ -74,7 +74,7 @@ def load_portfolios() -> Dict[int, Portfolio]:
     return portfolios
 '''
 
-
+'''
 def load_portfolios() -> Dict[int, Portfolio]:
     abs_path = os.path.abspath(PORTFOLIOS_FILE)
     print(f"\n📂 ЗАГРУЗКА ПОРТФЕЛЕЙ: {abs_path}")
@@ -105,20 +105,6 @@ def load_portfolios() -> Dict[int, Portfolio]:
     portfolios = {}
     for item in data:
         try:
-            p = Portfolio.from_dict(item)
-            portfolios[p.user_id] = p
-            print(f"✅ Загружен портфель user_id={p.user_id}")
-        except Exception as e:
-            print(f"⚠️ Пропущен портфель: {e}")
-            continue
-
-    print(f"📊 Всего загружено: {len(portfolios)}")
-    return portfolios
-
-
-    portfolios = {}
-    for item in data:
-        try:
             portfolio = Portfolio.from_dict(item)
             portfolios[portfolio.user_id] = portfolio
             print(f"✅ Загружен портфель user_id={portfolio.user_id}")
@@ -128,7 +114,7 @@ def load_portfolios() -> Dict[int, Portfolio]:
 
     print(f"📊 Всего загружено портфелей: {len(portfolios)}")
     return portfolios
-
+'''
 '''
 def save_portfolios(portfolios: Dict[int, Portfolio]):
     data = [p.to_dict() for p in portfolios.values()]
@@ -153,7 +139,7 @@ def save_portfolios(portfolios: Dict[int, Portfolio]):
         print(f"❌ ОШИБКА СОХРАНЕНИЯ: {e}")
         raise
 '''
-
+'''
 def save_portfolios(portfolios: Dict[int, Portfolio]):
     data = [p.to_dict() for p in portfolios.values()]
 
@@ -174,7 +160,7 @@ def save_portfolios(portfolios: Dict[int, Portfolio]):
     except Exception as e:
         print(f"❌ Ошибка записи: {e}")
         raise
-
+'''
 '''
 def load_rates() -> Dict[str, float]:
     if not os.path.exists(RATES_FILE):
@@ -210,7 +196,7 @@ def load_rates() -> Dict[str, float]:
 
     return {k: v for k, v in data.items() if k != "last_updated"}
 '''
-
+'''
 def load_rates() -> Dict[str, float]:
     if not os.path.exists(RATES_FILE):
         # Возвращаем дефолтные курсы в нужном формате
@@ -241,7 +227,7 @@ def load_rates() -> Dict[str, float]:
     rates["USD"] = 1.0
 
     return rates
-
+'''
 '''
 def register_user(username: str, password: str) -> User:
     users = load_users()
@@ -355,6 +341,7 @@ def get_portfolio(user: User) -> Portfolio:
     return result
 '''
 
+'''
 def get_portfolio(user: User) -> Portfolio:
     print(f"\n🔍 get_portfolio: user = {user}, type = {type(user)}")
     
@@ -378,12 +365,42 @@ def get_portfolio(user: User) -> Portfolio:
     result = portfolios[user.user_id]
     print(f"💼 Возвращаем портфель: user_id={result.user_id}, wallets={list(result._wallets.keys())}")
     return result
+'''
+'''
+def get_portfolio(user: User) -> Portfolio:
+    """Получить портфель пользователя. Создаёт пустой с 1000 USD, если его нет."""
+    if not isinstance(user, User):
+        raise TypeError(f"Ожидался User, получен {type(user)}")
 
+    db = DatabaseManager()
+    portfolio = db.load_portfolio(user.user_id)
+
+    # Если портфель только что создан — добавим стартовый капитал
+    if len(portfolio._wallets) == 0:
+        # usd_wallet = Wallet(currency_code="USD", initial_balance=1000.0)
+        # portfolio.add_wallet(usd_wallet)
+        portfolio.add_currency("USD", initial_balance=1000.0)
+        db.save_portfolio(portfolio)
+
+    return portfolio
+'''
+
+def get_portfolio(user: User) -> Portfolio:
+    """Получить портфель пользователя. Не добавляет стартовый капитал."""
+    if not isinstance(user, User):
+        raise TypeError(f"Ожидался User, получен {type(user)}")
+
+    db = DatabaseManager()
+    portfolio = db.load_portfolio(user.user_id)
+
+    return portfolio
+
+'''
 def update_portfolio(portfolio: Portfolio):
     portfolios = load_portfolios()
     portfolios[portfolio.user_id] = portfolio
     save_portfolios(portfolios)
-
+'''
 '''
 def get_exchange_rate(currency: str) -> Optional[float]:
     rates = load_rates()
@@ -407,6 +424,7 @@ def get_exchange_rate(from_code: str, to_code: str) -> float:
     return rates[from_code] / rates[to_code]
 '''
 
+'''
 def get_exchange_rate(from_code: str, to_code: str) -> float:
     """
     Получить курс обмена: 1 единица from_code = ? единиц to_code.
@@ -435,7 +453,145 @@ def get_exchange_rate(from_code: str, to_code: str) -> float:
     exchange_rate = rate_from_usd / rate_to_usd
 
     return exchange_rate
+'''
+'''
+def get_exchange_rate(from_currency: str, to_currency: str) -> Optional[float]:
+    settings = SettingsLoader.load()
+    ttl = settings.get("exchange_rate_cache_ttl", 300)  # секунды
 
+    file_path = os.path.join("data", "rates.json")
+    if not os.path.exists(file_path):
+        return None
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        pair_key = f"{from_currency}_{to_currency}"
+        pair_data = data.get("pairs", {}).get(pair_key)
+        if not pair_data:
+            return None
+
+        updated_at = datetime.fromisoformat(pair_data["updated_at"].replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        if now - updated_at > timedelta(seconds=ttl):
+            return None  # устарело
+
+        return float(pair_data["rate"])
+    except Exception:
+        return None
+'''
+'''
+def get_exchange_rate(from_code: str, to_code: str) -> float:
+    print(f"🔍 get_exchange_rate: ищем курс {from_code} → {to_code}")
+    db = DatabaseManager()
+    rates = db.load_rates()
+    print(f"📊 Доступные курсы: {list(rates.keys())}")
+    print("🔍 DEBUG: Доступные курсы в rates:", rates)
+    print(f"🔍 DEBUG: Ищем валюты: {from_code} и {to_code}")
+    from_code = from_code.strip().upper()
+    to_code = to_code.strip().upper()
+
+    if from_code not in rates:
+        raise CurrencyNotFoundError(from_code)
+    if to_code not in rates:
+        raise CurrencyNotFoundError(to_code)
+    print(f"✅ Вернули курс: {rate}")
+    return rates[from_code] / rates[to_code]
+'''
+
+def get_exchange_rate(from_code: str, to_code: str) -> float:
+    print(f"🔍 get_exchange_rate: ищем курс {from_code} → {to_code}")
+    db = DatabaseManager()
+    rates = db.load_rates()
+    print(f"📊 Доступные курсы: {list(rates.keys())}")
+    print("🔍 DEBUG: Доступные курсы в rates:", rates)
+    print(f"🔍 DEBUG: Ищем валюты: {from_code} и {to_code}")
+
+    from_code = from_code.strip().upper()
+    to_code = to_code.strip().upper()
+
+    if from_code not in rates:
+        raise CurrencyNotFoundError(from_code)
+    if to_code not in rates:
+        raise CurrencyNotFoundError(to_code)
+
+    # Сначала вычисляем курс
+    rate = rates[from_code] / rates[to_code]
+    
+    # Потом уже выводим
+    print(f"✅ Вернули курс: {rate}")
+
+    return rate
+
+'''
+def get_exchange_rate(from_curr: str, to_curr: str) -> float:
+    if from_curr == to_curr:
+        return 1.0
+
+    # Прямой курс
+    direct = pairs.get(f"{from_curr}_{to_curr}")
+    if direct:
+        return direct["rate"]
+
+    # Обратный: есть to_curr → from_curr?
+    reverse = pairs.get(f"{to_curr}_{from_curr}")
+    if reverse:
+        return 1 / reverse["rate"]
+
+    # Через USD
+    via_from_usd = pairs.get(f"{from_curr}_USD") or (1 / pairs[f"USD_{from_curr}"]["rate"] if f"USD_{from_curr}" in pairs else None)
+    via_to_usd = pairs.get(f"USD_{to_curr}")
+
+    if via_from_usd and via_to_usd:
+        return via_from_usd["rate"] * via_to_usd["rate"]
+
+    raise ValueError(f"Курс {from_curr}→{to_curr} не найден")
+'''
+'''
+def get_exchange_rate(from_curr: str, to_curr: str) -> float:
+    """
+    Получить курс обмена: 1 from_curr = ? to_curr
+    Использует данные из базы (rates.json) с поддержкой прямых, обратных и кросс-курсов.
+    """
+    if from_curr == to_curr:
+        return 1.0
+
+    # Загружаем курсы через DatabaseManager
+    db = DatabaseManager()
+    rates = db.load_rates()
+    # snapshot = db.load_rates_snapshot()  # ← возвращает весь JSON, включая pairs
+    # rates = snapshot.get("pairs", {})
+
+    # Прямой курс: EUR_RUB
+    pair_key = f"{from_curr}_{to_curr}"
+    if pair_key in rates:
+        return float(rates[pair_key]["rate"])
+
+    # Обратный курс: RUB_EUR → 1 / rate
+    reverse_key = f"{to_curr}_{from_curr}"
+    if reverse_key in rates:
+        return 1 / float(rates[reverse_key]["rate"])
+
+    # Кросс-курс через USD
+    try:
+        # from_curr → USD
+        if f"{from_curr}_USD" in rates:
+            rate1 = float(rates[f"{from_curr}_USD"]["rate"])
+        else:
+            # Попробуем USD → from_curr и обратим
+            rate1 = 1 / float(rates[f"USD_{from_curr}"]["rate"])
+
+        # USD → to_curr
+        if f"USD_{to_curr}" in rates:
+            rate2 = float(rates[f"USD_{to_curr}"]["rate"])
+        else:
+            rate2 = 1 / float(rates[f"{to_curr}_USD"]["rate"])
+
+        return rate1 * rate2
+    except KeyError:
+        raise CurrencyNotFoundError(f"Курс {from_curr}→{to_curr} не найден в базе")
+'''
 '''
 @log_action("BUY", verbose=True)
 def buy_currency(portfolio, currency_code: str, amount: float, rate: float) -> None:
@@ -473,12 +629,17 @@ def buy(user_id: int, currency_code: str, amount: float) -> None:
         )
 
     # Пополняем валюту (кошелёк создаётся автоматически)
+    '''
     target_wallet = portfolio.get_wallet(currency_code)
     if not target_wallet:
         target_wallet = Wallet(currency_code, 0.0)
         portfolio.add_wallet(target_wallet)
     target_wallet.deposit(amount)
-
+    '''
+    if currency_code not in portfolio.wallets:
+        portfolio.add_currency(currency_code, 0.0)
+    portfolio.get_wallet(currency_code).deposit(amount)
+    
     # Снимаем USD
     usd_wallet.withdraw(usd_cost)
 
@@ -529,11 +690,16 @@ def sell(user_id: int, currency_code: str, amount: float) -> float:
     wallet.withdraw(amount)
 
     # Пополняем USD
+    '''
     usd_wallet = portfolio.get_wallet("USD")
     if not usd_wallet:
         usd_wallet = Wallet("USD", 0.0)
         portfolio.add_wallet(usd_wallet)
     usd_wallet.deposit(revenue_usd)
+    '''
+    if "USD" not in portfolio.wallets:
+        portfolio.add_currency("USD", initial_balance=0.0)
+    portfolio.get_wallet("USD").deposit(revenue_usd)
 
     db.save_portfolio(portfolio)
     return revenue_usd

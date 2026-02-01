@@ -1,5 +1,5 @@
 {
-  "data_path": "data",
+  "data_dir": "data",
   "rates_ttl_seconds": 300,
   "base_currency": "USD",
   "log_level": "INFO",

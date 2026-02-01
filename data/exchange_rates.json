@@ -1,0 +1,29 @@
+[
+  {
+    "id": "BTC_USD_2025-10-10T12:00:00Z",
+    "from_currency": "BTC",
+    "to_currency": "USD",
+    "rate": 59337.21,
+    "timestamp": "2025-10-10T12:00:00Z",
+    "source": "CoinGecko",
+    "meta": {
+      "raw_id": "bitcoin",
+      "request_ms": 124,
+      "status_code": 200,
+      "etag": "W/\"abc123\""
+    }
+  },
+  {
+    "id": "ETH_USD_2025-10-10T12:00:00Z",
+    "from_currency": "ETH",
+    "to_currency": "USD",
+    "rate": 2345.67,
+    "timestamp": "2025-10-10T12:00:00Z",
+    "source": "CoinGecko",
+    "meta": {
+      "raw_id": "ethereum",
+      "request_ms": 112,
+      "status_code": 200
+    }
+  }
+]

@@ -51,3 +51,17 @@ class UserAlreadyExistsError(ValutaTradeError):
         self.username = username
         message = f"Пользователь с именем '{username}' уже существует"
         super().__init__(message)
+
+class ApiRequestError(Exception):
+    """Исключение: при запросе к внешнему API (сетевые проблемы, 4xx/5xx)"""
+    pass
+
+
+class ParsingError(Exception):
+    """Исключение: при разборе данных из API (неправильный формат JSON и т.п.)"""
+    pass
+
+
+class StorageError(Exception):
+    """Исключение: при сохранении или чтении данных (например, не удалось записать в файл)"""
+    pass

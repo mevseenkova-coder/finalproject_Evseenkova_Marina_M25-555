@@ -27,6 +27,23 @@ class User:
         # Валидация
         if not self._username:
             raise ValueError("Имя пользователя не может быть пустым.")
+    
+    @classmethod
+    def create_user(cls, user_id: int, username: str, password: str, salt: str, registration_date: datetime) -> 'User':
+        """
+        Фабричный метод: создаёт пользователя, хэшируя переданный пароль.
+        """
+        if len(password) < 4:
+            raise ValueError("Пароль должен быть не короче 4 символов.")
+        salted_password = password + salt
+        hashed_password = hashlib.sha256(salted_password.encode('utf-8')).hexdigest()
+        return cls(
+            user_id=user_id,
+            username=username,
+            hashed_password=hashed_password,
+            salt=salt,
+            registration_date=registration_date
+        )
 
     # === Геттеры ===
     @property
@@ -207,6 +224,7 @@ class User:
 
 class Wallet:
     def __init__(self, currency_code: str, initial_balance: float = 0.0):
+        print(f"🔧 Создаём Wallet: currency_code={currency_code}, initial_balance={initial_balance}")
         self._currency_code = currency_code.strip().upper()
         self._balance = 0.0
         # Используем сеттер для валидации начального баланса
@@ -236,17 +254,19 @@ class Wallet:
     def deposit(self, amount: float) -> None:
         """Пополнение баланса"""
         self._validate_amount(amount)
-        self.balance += amount
-        print(f"Пополнение: +{amount} {self._currency_code}. Текущий баланс: {self.balance} {self._currency_code}")
+        self._balance += amount
+        self._balance = round(self._balance, 6)
+        print(f"Пополнение: +{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}")
 
     def withdraw(self, amount: float) -> None:
         """Снятие средств, если достаточно средств"""
         self._validate_amount(amount)
-        if amount > self.balance:
+        if amount > self._balance:
             # raise ValueError(f"Недостаточно средств. Доступно: {self.balance} {self._currency_code}")
-            raise InsufficientFundsError(available=self.balance, required=amount, code=self._currency_code)
-        self.balance -= amount
-        print(f"Снятие: -{amount} {self._currency_code}. Текущий баланс: {self.balance} {self._currency_code}")
+            raise InsufficientFundsError(available=self._balance, required=amount, code=self._currency_code)
+        self._balance -= amount
+        self._balance = round(self._balance, 6)
+        print(f"Снятие: -{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}")
 
     def get_balance_info(self) -> Dict[str, float]:
         """Возвращает информацию о балансе"""
@@ -282,6 +302,7 @@ class Wallet:
 # from wallet import Wallet  # Раскомментировать при использовании
 
 class Portfolio:
+    '''
     # Простой словарь с фиктивными курсами для демонстрации
     _exchange_rates = {
         "USD": 1.0,
@@ -291,7 +312,7 @@ class Portfolio:
         "BTC": 60000.0,   # 1 BTC = 60 000 USD (условно)
         "ETH": 3000.0,    # 1 ETH = 3 000 USD
     }
-
+    '''
     def __init__(self, user_id: int, wallets: Dict[str, 'Wallet'] = None):
         self._user_id = user_id
         self._wallets: Dict[str, Wallet] = {}
@@ -332,6 +353,7 @@ class Portfolio:
         """Возвращает кошелёк по коду валюты или None, если не найден"""
         return self._wallets.get(currency_code.strip().upper())
 
+    '''
     def get_total_value(self, base_currency: str = 'USD') -> float:
         """
         Возвращает общую стоимость портфеля в указанной базовой валюте.
@@ -349,6 +371,27 @@ class Portfolio:
                 print(f"⚠️  Нет курса для {code}, пропускаем.")
                 continue
             total += wallet.balance * rate
+        return total
+    '''
+
+    def get_total_value(self, base_currency: str = 'USD') -> float:
+        """
+        Возвращает общую стоимость портфеля в указанной базовой валюте.
+        Использует get_exchange_rate из usecases.
+        """
+        from valutatrade_hub.core.usecases import get_exchange_rate, CurrencyNotFoundError
+
+        base_currency = base_currency.strip().upper()
+
+        total = 0.0
+        for wallet in self._wallets.values():
+            try:
+                rate = get_exchange_rate(wallet.currency_code, base_currency)
+                value = wallet.balance * rate
+                total += value
+            except CurrencyNotFoundError:
+                print(f"⚠️  Курс для {wallet.currency_code} не найден, пропускаем.")
+                continue
         return total
 
     # === Операции с портфелем ===
