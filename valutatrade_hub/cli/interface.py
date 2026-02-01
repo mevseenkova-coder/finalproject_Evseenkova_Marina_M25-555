@@ -1,41 +1,44 @@
 # valutatrade_hub/cli/interface.py
 
 import argparse
-from datetime import datetime, timedelta
 import json
 import os
-import threading
-from typing import List, Dict, Optional, Any
-from valutatrade_hub.core.models import User, Portfolio
-import sys
 import secrets
+import threading
+from datetime import datetime
+from typing import Optional
 
+from valutatrade_hub.core.models import Portfolio, User
 
 # from valutatrade_hub.core.usecases import *
-from valutatrade_hub.core.usecases import (
-    buy as usecase_buy,
-    sell as usecase_sell,
-    get_exchange_rate as usecase_get_rate,
-    get_portfolio
-)
+from valutatrade_hub.core.usecases import buy as usecase_buy
+from valutatrade_hub.core.usecases import get_exchange_rate as usecase_get_rate
+from valutatrade_hub.core.usecases import get_portfolio
+from valutatrade_hub.core.usecases import sell as usecase_sell
+
 '''
 from valutatrade_hub.core.usecases import (
     register_user, login, get_portfolio, update_portfolio,
     get_exchange_rate
 )
 '''
-from valutatrade_hub.core.exceptions import CurrencyNotFoundError, ApiRequestError
-from valutatrade_hub.core.currencies import get_currency
-from valutatrade_hub.infra.settings import SettingsLoader
+from valutatrade_hub.core.exceptions import ApiRequestError, CurrencyNotFoundError
 from valutatrade_hub.infra.database import DatabaseManager
 
 # Попробуем импортировать компоненты парсера (если доступны)
 try:
-    from valutatrade_hub.parser_service.api_clients import CoinGeckoClient, ExchangeRateApiClient
-    from valutatrade_hub.parser_service.updater import RatesUpdater, update_rates
-    from valutatrade_hub.parser_service.scheduler import start_scheduler
     import threading
+
+    from valutatrade_hub.parser_service.api_clients import (
+        CoinGeckoClient,
+        ExchangeRateApiClient,
+    )
     from valutatrade_hub.parser_service.config import config
+    from valutatrade_hub.parser_service.scheduler import start_scheduler
+    from valutatrade_hub.parser_service.updater import (  # noqa: E501
+        RatesUpdater,
+        update_rates,
+    )
     PARSER_AVAILABLE = bool(config.EXCHANGERATE_API_KEY)
     # PARSER_AVAILABLE = True
 except ImportError as e:
@@ -124,7 +127,7 @@ def cmd_register(args):
     username, password = args
     try:
         user = register_user(username, password)
-        print(f"✅ Пользователь {username} успешно зарегистрирован (ID: {user.user_id})")
+        print(f"✅ Пользователь {username} успешно зарегистрирован(ID: {user.user_id})")
     except ValueError as e:
         print(f"Ошибка: {e}")
 """
@@ -238,10 +241,12 @@ def cmd_register(args):
 
     global current_user
     current_user = user  # ✅ сохраняем объект User
-    print(f"🔧 Регистрация успешна. Текущий пользователь: {current_user.username} (id={current_user.user_id})")
+    print(f"🔧 Регистрация успешна. Текущий пользователь: {current_user.username} 
+        (id={current_user.user_id})") # noqa: E501
 
     # Успешный ответ
-    print(f"Пользователь '{username}' зарегистрирован (id={user_id}). Войдите: login --username {username} --password ****")
+    print(f"Пользователь '{username}' зарегистрирован (id={user_id}). Войдите: login 
+        --username {username} --password ****") # noqa: E501
 """
 def cmd_register(args):
     # global current_user
@@ -372,7 +377,8 @@ def cmd_show_portfolio(args):
     if not require_login():
         return
     portfolio = get_portfolio(current_user.user_id)
-    print(f"\n📊 Портфель пользователя {current_user.username} (ID: {current_user.user_id}):")
+    print(f"\n📊 Портфель пользователя {current_user.username} (ID: 
+        {current_user.user_id}):") # noqa: E501
     for code, wallet in portfolio.wallets.items():
         print(f"  {code}: {wallet.balance}")
     total = portfolio.get_total_value()
@@ -445,7 +451,7 @@ def cmd_show_portfolio(args):
         total_value += value_in_base
 
         # Форматируем вывод
-        print(f"- {code}: {wallet.balance:,.6f}  → {value_in_base:,.2f} {base_currency}")
+        print(f"- {code}: {wallet.balance:,.6f} → {value_in_base:,.2f} {base_currency}")
 
     print("-" * 40)
     print(f"ИТОГО: {total_value:,.2f} {base_currency}")
@@ -494,9 +500,11 @@ def cmd_show_portfolio(args):
             rate = get_exchange_rate(code, base_currency)
             value_in_base = wallet.balance * rate
             total_value += value_in_base
-            print(f"- {code}: {wallet.balance:,.6f}  → {value_in_base:,.2f} {base_currency}")
+            print(f"- {code}: {wallet.balance:,.6f}  → {value_in_base:,.2f} 
+                {base_currency}") # noqa: E501
         except CurrencyNotFoundError as e:
-            print(f"- {code}: {wallet.balance:,.6f}  → курс {code}→{base_currency} неизвестен, пропущено")
+            print(f"- {code}: {wallet.balance:,.6f}  → курс {code}→{base_currency} 
+                неизвестен, пропущено") # noqa: E501
             continue
 
     print("-" * 40)
@@ -530,7 +538,7 @@ def cmd_show_portfolio(args):
     wallets = portfolio.wallets
     if not wallets:
         if pretty:
-            print(f"💼 Пустой портфель")
+            print("💼 Пустой портфель")
         else:
             print(f"Портфель пользователя '{current_user.username}' пуст.")
         return
@@ -539,7 +547,7 @@ def cmd_show_portfolio(args):
     EMOJI = {"USD": "💵", "EUR": "💶", "BTC": "🪙", "ETH": "🔷", "RUB": "🇷🇺"}
     total_value = 0.0
 
-    from valutatrade_hub.core.usecases import get_exchange_rate, CurrencyNotFoundError
+    from valutatrade_hub.core.usecases import CurrencyNotFoundError, get_exchange_rate
 
     if pretty:
         # ✅ Красивый режим
@@ -567,9 +575,9 @@ def cmd_show_portfolio(args):
                 rate = get_exchange_rate(code, base_currency)
                 value_in_base = wallet.balance * rate
                 total_value += value_in_base
-                print(f"- {code}: {wallet.balance:,.6f}  → {value_in_base:,.2f} {base_currency}")
-            except CurrencyNotFoundError as e:
-                print(f"- {code}: {wallet.balance:,.6f}  → курс {code}→{base_currency} неизвестен, пропущено")
+                print(f"- {code}: {wallet.balance:,.6f}  → {value_in_base:,.2f} {base_currency}") # noqa: E501
+            except CurrencyNotFoundError:
+                print(f"- {code}: {wallet.balance:,.6f}  → курс {code}→{base_currency} неизвестен, пропущено") # noqa: E501
 
         print("-" * 40)
         print(f"ИТОГО: {total_value:,.2f} {base_currency}")
@@ -598,10 +606,12 @@ def cmd_show_portfolio(args):
             # ✅ Красивый режим
             print(f"💼 Портфель пользователя '{current_user.username}':")
             for wallet in portfolio.wallets:
-                value_usd = wallet.balance * get_exchange_rate(wallet.currency_code, "USD")
+                value_usd = wallet.balance * get_exchange_rate(wallet.currency_code, 
+                    "USD") # noqa: E501
                 total_usd += value_usd
                 # Эмодзи по валюте
-                emoji = {"USD": "💵", "EUR": "💶", "BTC": "🪙"}.get(wallet.currency_code, "💰")
+                emoji = {"USD": "💵", "EUR": "💶", "BTC": "🪙"}
+                    .get(wallet.currency_code, "💰")# noqa: E501
                 print(f"{emoji} {wallet.currency_code}: {value_usd:,.2f}")
             print("──────────────────────")
             print(f"💼 ИТОГО: {total_usd:,.2f} USD")
@@ -612,7 +622,8 @@ def cmd_show_portfolio(args):
                 rate = get_exchange_rate(wallet.currency_code, "USD")
                 value_usd = wallet.balance * rate
                 total_usd += value_usd
-                print(f"- {wallet.currency_code}: {wallet.balance:.6f}  → {value_usd:.2f} USD")
+                print(f"- {wallet.currency_code}: {wallet.balance:.6f}  → 
+                    {value_usd:.2f} USD") # noqa: E501
             print("----------------------------------------")
             print(f"ИТОГО: {total_usd:,.2f} USD")
 
@@ -719,7 +730,8 @@ def cmd_buy(args):
 
     total_cost_usd = amount * rate
 
-    print(f"Покупка выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} USD/{currency}")
+    print(f"Покупка выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} 
+        USD/{currency}") # noqa: E501
     print("Изменения в портфеле:")
     print(f"  {currency}: было {old_balance:,.4f} → стало {new_balance:,.4f}")
     print(f"Оценочная стоимость покупки: {total_cost_usd:,.2f} USD")
@@ -763,7 +775,7 @@ def cmd_buy(args):
         rate = usecase_get_rate(currency, "USD")
         usd_cost = amount * rate
         print(f"🔍 Курс {currency}/USD: {rate:.6f} → Стоимость: {usd_cost:.2f} USD")
-        confirm = input(f"🛒 Подтвердите покупку {amount} {currency} за {usd_cost:.2f} USD? (y/n): ")
+        confirm = input(f"🛒 Подтвердите покупку {amount} {currency} за {usd_cost:.2f} USD? (y/n): ") # noqa: E501
         if confirm.lower() != 'y':
             print("ℹ️ Покупка отменена.")
             return
@@ -774,7 +786,7 @@ def cmd_buy(args):
     except CurrencyNotFoundError as e:
         print(f"❌ Валюта '{e.code}' не поддерживается.")
     except InsufficientFundsError as e:
-        print(f"❌ Недостаточно средств: доступно {e.available:.2f} USD, требуется {e.required:.2f} USD")
+        print(f"❌ Недостаточно средств: доступно {e.available:.2f} USD, требуется {e.required:.2f} USD") # noqa: E501
     except Exception as e:
         print(f"❌ Ошибка при покупке: {e}")
 
@@ -849,7 +861,8 @@ def cmd_sell(args):
     # Проверяем, существует ли кошелёк
     wallet = portfolio.get_wallet(currency)
     if not wallet:
-        print(f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся автоматически при первой покупке.")
+        print(f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся 
+            автоматически при первой покупке.") # noqa: E501
         return
 
     # Получаем курс
@@ -875,7 +888,8 @@ def cmd_sell(args):
     new_balance = wallet.balance  # ← актуальное значение после withdraw
     revenue_usd = amount * rate
 
-    print(f"Продажа выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} USD/{currency}")
+    print(f"Продажа выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} 
+        USD/{currency}") # noqa: E501
     print("Изменения в портфеле:")
     print(f"  {currency}: было {new_balance + amount:,.4f} → стало {new_balance:,.4f}")
     print(f"Оценочная выручка: {revenue_usd:,.2f} USD")
@@ -918,7 +932,8 @@ def cmd_sell(args):
         rate = usecase_get_rate(currency, "USD")
         revenue_usd = amount * rate
         print(f"🔍 Курс {currency}/USD: {rate:.6f} → Выручка: {revenue_usd:.2f} USD")
-        confirm = input(f"💰 Подтвердите продажу {amount} {currency} за {revenue_usd:.2f} USD? (y/n): ")
+        confirm = input(f"💰 Подтвердите продажу {amount} {currency} за 
+            {revenue_usd:.2f} USD? (y/n): ") # noqa: E501
         if confirm.lower() != 'y':
             print("ℹ️ Продажа отменена.")
             return
@@ -929,7 +944,8 @@ def cmd_sell(args):
     except CurrencyNotFoundError as e:
         print(f"❌ Валюта '{e.code}' не поддерживается.")
     except InsufficientFundsError as e:
-        print(f"❌ Недостаточно {currency}: доступно {e.available:.6f}, требуется {e.required:.6f}")
+        print(f"❌ Недостаточно {currency}: доступно {e.available:.6f}, 
+            требуется {e.required:.6f}") # noqa: E501
     except Exception as e:
         print(f"❌ Ошибка при продаже: {e}")
 '''
@@ -953,10 +969,10 @@ def cmd_sell(args):
     pretty = bool(parsed.get("pretty"))
 
     if not currency:
-        print("❌ Параметр --currency обязателен." if pretty else "Ошибка: параметр --currency обязателен.")
+        print("❌ Параметр --currency обязателен." if pretty else "Ошибка: параметр --currency обязателен.") # noqa: E501
         return
     if not amount_str:
-        print("❌ Параметр --amount обязателен." if pretty else "Ошибка: параметр --amount обязателен.")
+        print("❌ Параметр --amount обязателен." if pretty else "Ошибка: параметр --amount обязателен.") # noqa: E501
         return
 
     currency = currency.strip().upper()
@@ -977,11 +993,11 @@ def cmd_sell(args):
             print(f"🪙 Продаём: {amount:,.6f} {currency}")
             print(f"💱 Курс: 1 {currency} = {rate:,.6f} USD")
             print(f"💵 Получим: {revenue_usd:,.2f} USD")
-            confirm = input(f"✅ Подтвердите продажу? (y/n): ")
+            confirm = input("✅ Подтвердите продажу? (y/n): ")
         else:
             # Обычный режим
-            print(f"🔍 Курс {currency}/USD: {rate:.6f} → Выручка: {revenue_usd:.2f} USD")
-            confirm = input(f"💰 Подтвердите продажу {amount} {currency} за {revenue_usd:.2f} USD? (y/n): ")
+            print(f"🔍 Курс {currency}/USD: {rate:.6f} → Выручка: {revenue_usd:.2f} USD") # noqa: E501
+            confirm = input(f"💰 Подтвердите продажу {amount} {currency} за {revenue_usd:.2f} USD? (y/n): ") # noqa: E501
 
         if confirm.lower() != 'y':
             if pretty:
@@ -994,7 +1010,7 @@ def cmd_sell(args):
         usecase_sell(current_user.user_id, currency, amount)
 
         if pretty:
-            print(f"✅ Успешно!")
+            print("✅ Успешно!")
             print(f"🪙 {amount:,.6f} {currency} продано")
             print(f"💵 +{revenue_usd:,.2f} USD зачислено")
         else:
@@ -1003,8 +1019,8 @@ def cmd_sell(args):
     except CurrencyNotFoundError as e:
         print(f"❌ Валюта '{e.code}' не поддерживается.")
     except InsufficientFundsError as e:
-        msg = f"🪙 Недостаточно: есть {e.available:.6f}, нужно {e.required:.6f}" if pretty \
-              else f"❌ Недостаточно {currency}: доступно {e.available:.6f}, требуется {e.required:.6f}"
+        msg = f"🪙 Недостаточно: есть {e.available:.6f}, нужно {e.required:.6f}" \
+                if pretty  else f"❌ Недостаточно {currency}: доступно {e.available:.6f}, требуется {e.required:.6f}" # noqa: E501
         print(msg)
     except Exception as e:
         print(f"❌ Ошибка при продаже: {e}")
@@ -1058,12 +1074,14 @@ def cmd_sell(args):
     # Проверяем, существует ли кошелёк
     wallet = portfolio.get_wallet(currency)
     if not wallet:
-        print(f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся автоматически при первой покупке.")
+        print(f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся 
+            автоматически при первой покупке.") # noqa: E501
         return
 
     # Проверяем баланс
     if wallet.balance < amount:
-        print(f"Недостаточно средств: доступно {wallet.balance:,.4f} {currency}, требуется {amount:,.4f} {currency}")
+        print(f"Недостаточно средств: доступно {wallet.balance:,.4f} {currency}, 
+            требуется {amount:,.4f} {currency}") # noqa: E501
         return
 
     # Получаем курс
@@ -1088,7 +1106,8 @@ def cmd_sell(args):
     new_balance = wallet.balance - amount  # или portfolio.get_wallet(currency).balance
     revenue_usd = amount * rate
 
-    print(f"Продажа выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} USD/{currency}")
+    print(f"Продажа выполнена: {amount:,.4f} {currency} по курсу {rate:,.2f} 
+        USD/{currency}") # noqa: E501
     print("Изменения в портфеле:")
     print(f"  {currency}: было {old_balance:,.4f} → стало {new_balance:,.4f}")
     print(f"Оценочная выручка: {revenue_usd:,.2f} USD")
@@ -1205,7 +1224,8 @@ def cmd_get_rate(args):
         updated_str = last_updated.strftime("%Y-%m-%d %H:%M:%S")
 
         # Вывод
-        print(f"Курс {from_curr}→{to_curr}: {forward_rate:.8f} (обновлено: {updated_str})")
+        print(f"Курс {from_curr}→{to_curr}: {forward_rate:.8f} (обновлено: 
+            {updated_str})") # noqa: E501
         print(f"Обратный курс {to_curr}→{from_curr}: {reverse_rate:.8f}")
 
     except ValueError as e:
@@ -1446,7 +1466,8 @@ def create_update_rates_parser(subparsers) -> None:
 def cmd_update_rates(args: argparse.Namespace) -> None:
     """Обработчик команды update-rates"""
     if not PARSER_AVAILABLE:
-        print("❌ Parser Service не доступен. Убедитесь, что папка parser_service существует и зависимости установлены.")
+        print("❌ Parser Service не доступен. Убедитесь, что папка parser_service 
+            существует и зависимости установлены.") # noqa: E501
         return
 
     print("INFO: Starting rates update...")
@@ -1467,7 +1488,8 @@ def cmd_update_rates(args: argparse.Namespace) -> None:
         source_key = args.source
         client_class = source_map[source_key]
         clients.append(client_class())
-        selected_sources = [source_key.replace("coingecko", "CoinGecko").replace("exchangerate", "ExchangeRate-API")]
+        selected_sources = [source_key.replace("coingecko", "CoinGecko").replace
+            ("exchangerate", "ExchangeRate-API")] # noqa: E501
 
     # Создаём обновляльщик
     updater = RatesUpdater(clients)
@@ -1480,13 +1502,15 @@ def cmd_update_rates(args: argparse.Namespace) -> None:
         total = len(updater.pairs)
         last_refresh = updater.timestamp
         print(f"INFO: Writing {total} rates to {config.RATES_FILE_PATH}...")
-        print(f"Update successful. Total rates updated: {total}. Last refresh: {last_refresh}")
+        print(f"Update successful. Total rates updated: {total}. Last refresh: 
+            {last_refresh}") # noqa: E501
     else:
         print("Update completed with errors. Check logs/parser.log for details.")
 '''
 
 def cmd_update_rates(args: argparse.Namespace) -> None:
-    """Обработчик команды update-rates — с поддержкой офлайн-режима и безопасным импортом"""
+    """Обработчик команды update-rates — с поддержкой офлайн-режима 
+    и безопасным импортом"""
     
     # Проверка доступности парсера (по API-ключам)
     if not PARSER_AVAILABLE:
@@ -1494,11 +1518,14 @@ def cmd_update_rates(args: argparse.Namespace) -> None:
         print("💡 Укажите EXCHANGERATE_API_KEY в .env, чтобы включить обновление.")
         return
 
-    # Отложенная загрузка модулей — чтобы не падать, если parser_service не импортируется
+    #Отложенная загрузка модулей — чтобы не падать, если parser_service не импортируется
     try:
-        from valutatrade_hub.parser_service.api_clients import CoinGeckoClient, ExchangeRateApiClient
-        from valutatrade_hub.parser_service.updater import RatesUpdater
+        from valutatrade_hub.parser_service.api_clients import (
+            CoinGeckoClient,
+            ExchangeRateApiClient,
+        )
         from valutatrade_hub.parser_service.config import config
+        from valutatrade_hub.parser_service.updater import RatesUpdater
     except ImportError as e:
         print(f"❌ Не удалось загрузить модули парсера: {e}")
         print("💡 Убедитесь, что папка parser_service и все зависимости установлены.")
@@ -1527,12 +1554,12 @@ def cmd_update_rates(args: argparse.Namespace) -> None:
     else:
         # Один источник
         if args.source not in source_map:
-            print(f"❌ Неизвестный источник: {args.source}. Доступные: coingecko, exchangerate")
+            print(f"❌ Неизвестный источник: {args.source}. Доступные: coingecko, exchangerate") # noqa: E501
             return
         client_class = source_map[args.source]
         try:
             clients.append(client_class())
-            selected_source_name = args.source.replace("coingecko", "CoinGecko").replace("exchangerate", "ExchangeRate-API")
+            selected_source_name = args.source.replace("coingecko", "CoinGecko").replace("exchangerate", "ExchangeRate-API") # noqa: E501
             selected_sources = [selected_source_name]
         except Exception as e:
             print(f"❌ Ошибка при создании клиента {args.source}: {e}")
@@ -1559,9 +1586,9 @@ def cmd_update_rates(args: argparse.Namespace) -> None:
         total = len(updater.pairs)
         last_refresh = updater.timestamp
         print(f"INFO: Writing {total} rates to {config.RATES_FILE_PATH}...")
-        print(f"✅ Update successful. Total rates updated: {total}. Last refresh: {last_refresh}")
+        print(f"✅ Update successful. Total rates updated: {total}. Last refresh: {last_refresh}") # noqa: E501
     else:
-        print("⚠️ Update completed with errors or no new data. Check logs/parser.log for details.")
+        print("⚠️ Update completed with errors or no new data. Check logs/parser.log for details.") # noqa: E501
 
 '''
 def create_show_rates_parser(subparsers) -> None:
@@ -1596,29 +1623,31 @@ def create_show_rates_parser(subparsers) -> None:
         aliases=["show", "rates"],
         help="Показать актуальные курсы из локального кеша"
     )
-    parser.description = "Отображает сохранённые курсы из файла rates.json. Поддерживает фильтрацию и сортировку."
+    parser.description = "Отображает сохранённые курсы из файла rates.json. Поддерживает фильтрацию и сортировку." # noqa: E501
 
     # Фильтрация
     filter_group = parser.add_argument_group("фильтрация")
-    filter_group.add_argument("--currency", "-c", type=str.upper, help="Показать курсы только для указанной валюты (напр. BTC)")
-    filter_group.add_argument("--base", "-b", type=str.upper, default="USD", help="Базовая валюта (по умолчанию: USD)")
+    filter_group.add_argument("--currency", "-c", type=str.upper, help="Показать курсы только для указанной валюты (напр. BTC)") # noqa: E501
+    filter_group.add_argument("--base", "-b", type=str.upper, default="USD", help="Базовая валюта (по умолчанию: USD)") # noqa: E501
 
     # Сортировка
     sort_group = parser.add_argument_group("сортировка")
-    sort_group.add_argument("--top", "-n", type=int, help="Показать топ-N самых дорогих активов по отношению к базе")
+    sort_group.add_argument("--top", "-n", type=int, help="Показать топ-N самых дорогих активов по отношению к базе") # noqa: E501
 
 '''
 def cmd_show_rates(args: argparse.Namespace) -> None:
     """Обработчик команды show-rates"""
     if not PARSER_AVAILABLE and not os.path.exists("data/rates.json"):
-        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', чтобы загрузить данные.")
+        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', 
+            чтобы загрузить данные.") # noqa: E501
         return
 
     # Определяем путь к файлу
     rates_file = config.RATES_FILE_PATH if PARSER_AVAILABLE else RATES_FILE_PATH
 
     if not os.path.exists(rates_file):
-        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', чтобы загрузить данные.")
+        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', 
+            чтобы загрузить данные.") # noqa: E501
         return
 
     # Читаем кеш
@@ -1633,7 +1662,8 @@ def cmd_show_rates(args: argparse.Namespace) -> None:
     last_refresh = data.get("last_refresh", "неизвестно")
 
     if not pairs:
-        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', чтобы загрузить данные.")
+        print("❌ Локальный кеш курсов пуст. Выполните 'update-rates', 
+            чтобы загрузить данные.") # noqa: E501
         return
 
     # Фильтрация по валюте: ищем пары, где валюта в начале (например, BTC_USD)
@@ -1681,7 +1711,8 @@ def cmd_show_rates(args: argparse.Namespace) -> None:
 '''
 
 def cmd_show_rates(args: argparse.Namespace) -> None:
-    """Обработчик команды show-rates — с поддержкой офлайн-режима и безопасным доступом к данным"""
+    """Обработчик команды show-rates — с поддержкой офлайн-режима 
+    и безопасным доступом к данным"""
     
     # Отложенная загрузка config — чтобы не падать, если parser_service недоступен
     try:
@@ -1694,7 +1725,7 @@ def cmd_show_rates(args: argparse.Namespace) -> None:
 
     # Проверяем, существует ли файл
     if not os.path.exists(rates_file):
-        print("❌ Локальный кеш курсов не найден. Выполните 'update-rates', чтобы загрузить данные.")
+        print("❌ Локальный кеш курсов не найден. Выполните 'update-rates', чтобы загрузить данные.") # noqa: E501
         return
 
     # Читаем кеш
@@ -1813,14 +1844,17 @@ def main():
                 elif cmd == "update-rates":
                     # Проверяем, доступен ли парсер
                     if not PARSER_AVAILABLE:
-                        print("❌ Обновление курсов недоступно: нет API-ключа или ошибка конфигурации")
-                        print("💡 Укажите EXCHANGERATE_API_KEY в .env, чтобы включить обновление курсов")
+                        print("❌ Обновление курсов недоступно: нет API-ключа или 
+                            ошибка конфигурации") # noqa: E501
+                        print("💡 Укажите EXCHANGERATE_API_KEY в .env, чтобы включить 
+                            обновление курсов") # noqa: E501
                         continue
 
                     # Импортируем только если нужно (опциональная зависимость)
                     try:
                         from valutatrade_hub.parser_service.updater import update_rates
-                        from valutatrade_hub.cli.interface import create_update_rates_parser, cmd_update_rates
+                        from valutatrade_hub.cli.interface import 
+                            create_update_rates_parser, cmd_update_rates # noqa: E501
                     except ImportError as e:
                         print(f"❌ Не удалось загрузить модуль обновления: {e}")
                         continue
@@ -1842,7 +1876,10 @@ def main():
                 '''
             elif cmd == "show-rates":
                 try:
-                    from valutatrade_hub.cli.interface import create_show_rates_parser, cmd_show_rates
+                    from valutatrade_hub.cli.interface import (
+                        cmd_show_rates,
+                        create_show_rates_parser,
+                    )
                 except ImportError as e:
                     print(f"⚠️ Не удалось загрузить парсер show-rates: {e}")
                     continue
@@ -1863,7 +1900,8 @@ def main():
                     # cmd_update_rates(args)
                     # Передаём строку в argparse
                     import sys
-                    from valutatrade_hub.cli.interface import create_update_rates_parser, cmd_update_rates
+                    from valutatrade_hub.cli.interface import 
+                        create_update_rates_parser, cmd_update_rates # noqa: E501
 
                     # Создаём парсер только для update-rates
                     parser = argparse.ArgumentParser()
@@ -1882,11 +1920,14 @@ def main():
                         print("🔄 Запуск обновления курсов...")
                         success = update_rates()
                         if success:
-                            print("✅ Курсы успешно обновлены и сохранены в exchange_rates.json")
+                            print("✅ Курсы успешно обновлены и сохранены в 
+                                exchange_rates.json") # noqa: E501
                         else:
-                            print("❌ Не удалось обновить курсы. Проверьте подключение и ключи API.")
+                            print("❌ Не удалось обновить курсы. Проверьте подключение 
+                                и ключи API.") # noqa: E501
                     else:
-                        print("❌ Parser Service недоступен. Убедитесь, что папка parser_service существует.")
+                        print("❌ Parser Service недоступен. Убедитесь, что папка 
+                            parser_service существует.") # noqa: E501
                     '''
                 elif cmd == "show-rates":
                     # cmd_show_rates(args)
@@ -1913,9 +1954,9 @@ def main():
 
                     thread = threading.Thread(target=run_scheduler, daemon=True)
                     thread.start()
-                    print("⏰ Фоновый планировщик запущен. Курсы будут обновляться каждые 10 минут.")
+                    print("⏰ Фоновый планировщик запущен. Курсы будут обновляться каждые 10 минут.") # noqa: E501
                 else:
-                    print("❌ Parser Service недоступен. Убедитесь, что папка parser_service существует.")
+                    print("❌ Parser Service недоступен. Убедитесь, что папка parser_service существует.") # noqa: E501
             else:
                 print("Неизвестная команда. Введите 'help' для справки.")
         except KeyboardInterrupt:

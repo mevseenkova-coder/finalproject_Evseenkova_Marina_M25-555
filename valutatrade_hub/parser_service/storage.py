@@ -4,11 +4,10 @@ import json
 import os
 import tempfile
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 # ✅ Импортируем и config, и пути
-from .config import config, RATES_FILE_PATH, HISTORY_FILE_PATH
+from .config import HISTORY_FILE_PATH, RATES_FILE_PATH
 
 # --- Устаревшие пути (можно удалить) ---
 # Больше не используем os.path.join("..", "..", "data", ...)
@@ -34,7 +33,7 @@ def load_exchange_rates() -> List[Dict[str, Any]]:
 def save_exchange_rates(records: List[Dict[str, Any]]) -> bool:
     """Сохранить историю атомарно: temp file → rename"""
     try:
-        temp_fd, temp_path = tempfile.mkstemp(suffix=".json", dir=tempfile.gettempdir(), text=True)
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".json", dir=tempfile.gettempdir(), text=True) # noqa: E501
         try:
             with os.fdopen(temp_fd, "w", encoding="utf-8") as tmp_file:
                 json.dump(records, tmp_file, ensure_ascii=False, indent=4, default=str)
@@ -54,14 +53,15 @@ def save_exchange_rates(records: List[Dict[str, Any]]) -> bool:
 # === Операции для rates.json (актуальные курсы) ===
 
 def save_rates_cache(rates: Dict[str, float]) -> None:
-    """Сохранить плоский кэш для Core Service: { "BTC": 59337.21, "last_updated": "..." }"""
+    """Сохранить плоский кэш для Core Service: 
+    { "BTC": 59337.21, "last_updated": "..." }"""
     data = {
         code: rate for code, rate in rates.items()
     }
     data["last_updated"] = datetime.now(timezone.utc).isoformat()
 
     try:
-        temp_fd, temp_path = tempfile.mkstemp(suffix=".json", dir=tempfile.gettempdir(), text=True)
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".json", dir=tempfile.gettempdir(), text=True) # noqa: E501
         with os.fdopen(temp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(data, tmp_file, ensure_ascii=False, indent=4, default=str)
         os.replace(temp_path, RATES_FILE_PATH)
@@ -109,7 +109,7 @@ def save_rates_snapshot(pairs: Dict[str, Dict], timestamp: str) -> bool:
         # Атомарная замена — ключевой момент
         temp_path.replace(RATES_FILE_PATH)
 
-        print(f"💾 [Storage] Успешно сохранено {len(pairs)} пар в {RATES_FILE_PATH.name}")
+        print(f"💾 [Storage] Успешно сохранено {len(pairs)} пар в {RATES_FILE_PATH.name}") # noqa: E501
         return True
 
     except Exception as e:

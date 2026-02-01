@@ -1,11 +1,15 @@
 # valutatrade_hub/parser_service/api_clients.py
 
-import requests
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
-# from .config import COIN_GECKO_URL, EXCHANGE_RATE_URL, CRYPTO_ID_MAP, FIAT_CURRENCIES, CRYPTO_CURRENCIES
-from .config import config
+from typing import Dict
+
+import requests
+
 from valutatrade_hub.core.exceptions import ApiRequestError
+
+''' from .config import COIN_GECKO_URL, EXCHANGE_RATE_URL, CRYPTO_ID_MAP, 
+FIAT_CURRENCIES, CRYPTO_CURRENCIES'''
+from .config import config
 
 # работа с внешними API
 '''
@@ -19,7 +23,8 @@ def fetch_crypto_prices() -> Optional[Dict[str, float]]:
         )
         response.raise_for_status()
         data = response.json()
-        return {code: data[coin_id]["usd"] for code, coin_id in CRYPTO_ID_MAP.items() if coin_id in data}
+        return {code: data[coin_id]["usd"] for code, coin_id in CRYPTO_ID_MAP.items() 
+            if coin_id in data} # noqa: E501
     except Exception as e:
         print(f"❌ Ошибка при запросе к CoinGecko: {e}")
         return None
@@ -28,7 +33,8 @@ def fetch_crypto_prices() -> Optional[Dict[str, float]]:
 '''
 def fetch_fiat_rates() -> Optional[Dict[str, float]]:
     try:
-        url = f"{config.EXCHANGERATE_API_URL}/{config.EXCHANGERATE_API_KEY}/latest/{config.BASE_CURRENCY}"
+        url = f"{config.EXCHANGERATE_API_URL}/{config.EXCHANGERATE_API_KEY}/latest/
+            {config.BASE_CURRENCY}" # noqa: E501
         # response = requests.get(EXCHANGE_RATE_URL, timeout=10)
         response = requests.get(url, timeout=10)
         if response.status_code == 429:
@@ -95,7 +101,7 @@ class CoinGeckoClient(BaseApiClient):
         except requests.exceptions.RequestException as e:
             raise ApiRequestError(f"Ошибка запроса к CoinGecko: {e}")
         except KeyError as e:
-            raise ApiRequestError(f"Ошибка парсинга ответа CoinGecko: отсутствует поле {e}")
+            raise ApiRequestError(f"Ошибка парсинга ответа CoinGecko: отсутствует поле {e}") # noqa: E501
         except Exception as e:
             raise ApiRequestError(f"Неизвестная ошибка при работе с CoinGecko: {e}")
 
@@ -105,7 +111,7 @@ class ExchangeRateApiClient(BaseApiClient):
     def __init__(self):
         if not config.EXCHANGERATE_API_KEY:
             raise ValueError("ExchangeRateApiClient: EXCHANGERATE_API_KEY не задан")
-        self.url = f"{config.EXCHANGERATE_API_URL}/{config.EXCHANGERATE_API_KEY}/latest/{config.BASE_CURRENCY}"
+        self.url = f"{config.EXCHANGERATE_API_URL}/{config.EXCHANGERATE_API_KEY}/latest/{config.BASE_CURRENCY}" # noqa: E501
 
     def fetch_rates(self) -> Dict[str, float]:
         try:
@@ -138,6 +144,6 @@ class ExchangeRateApiClient(BaseApiClient):
         except requests.exceptions.RequestException as e:
             raise ApiRequestError(f"Ошибка запроса к ExchangeRate-API: {e}")
         except KeyError as e:
-            raise ApiRequestError(f"Ошибка парсинга ответа ExchangeRate-API: отсутствует поле {e}")
+            raise ApiRequestError(f"Ошибка парсинга ответа ExchangeRate-API: отсутствует поле {e}") # noqa: E501
         except Exception as e:
-            raise ApiRequestError(f"Неизвестная ошибка при работе с ExchangeRate-API: {e}")
+            raise ApiRequestError(f"Неизвестная ошибка при работе с ExchangeRate-API: {e}") # noqa: E501

@@ -2,8 +2,8 @@
 
 import os
 from dataclasses import dataclass
-from typing import Dict, Tuple
 from pathlib import Path
+from typing import Dict, Tuple
 
 # Загрузка переменных окружения из .env
 from dotenv import load_dotenv
@@ -62,7 +62,7 @@ try:
         raise ValueError
     print(f"⏱️ Интервал обновления: {UPDATE_INTERVAL} секунд")
 except (ValueError, TypeError):
-    print("⚠️ Некорректное значение UPDATE_INTERVAL в .env. Используется значение по умолчанию: 3600 секунд")
+    print("⚠️ Некорректное значение UPDATE_INTERVAL в .env. Используется значение по умолчанию: 3600 секунд") # noqa: E501
     UPDATE_INTERVAL = 3600
 
 @dataclass(frozen=True)  # неизменяемый — безопаснее
@@ -132,9 +132,11 @@ class ParserConfig:
 
     '''
     def validate(self) -> bool:
-        """Проверить, что конфиг валиден. Всегда возвращает True — сервис не обязателен."""
+        """Проверить, что конфиг валиден. 
+        Всегда возвращает True — сервис не обязателен."""
         if not self.EXCHANGERATE_API_KEY:
-            print("⚠️ [Config] EXCHANGERATE_API_KEY не задан — обновление курсов будет отключено")
+            print("⚠️ [Config] EXCHANGERATE_API_KEY не задан — обновление курсов 
+                будет отключено") # noqa: E501
             return False  # ← можно вернуть False, но не кидать исключение
         return True
     '''
@@ -150,17 +152,18 @@ class ParserConfig:
             return False
 
         if not has_fiat_key:
-            print("⚠️ [Config] EXCHANGERATE_API_KEY не задан — обновление фиатных валют отключено")
+            print("⚠️ [Config] EXCHANGERATE_API_KEY не задан — обновление фиатных валют отключено") # noqa: E501
 
         if not has_crypto_key:
-            print("⚠️ [Config] COINGECKO_API_KEY не задан — обновление криптовалют отключено")
+            print("⚠️ [Config] COINGECKO_API_KEY не задан — обновление криптовалют отключено") # noqa: E501
 
         return True  # ✅ Разрешаем работать, если хотя бы один API есть
 
 # --- Глобальный экземпляр ---
 config = ParserConfig()
 # === Глобальные алиасы для удобства ===
-# Теперь можно писать: from .config import FIAT_CURRENCIES, CRYPTO_CURRENCIES, CRYPTO_ID_MAP
+'''Теперь можно писать: 
+from .config import FIAT_CURRENCIES, CRYPTO_CURRENCIES, CRYPTO_ID_MAP'''
 
 FIAT_CURRENCIES = config.FIAT_CURRENCIES
 CRYPTO_CURRENCIES = config.CRYPTO_CURRENCIES

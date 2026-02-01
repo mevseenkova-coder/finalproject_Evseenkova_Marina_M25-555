@@ -1,13 +1,14 @@
 # valutatrade_hub/parser_service/updater.py
 
-from datetime import datetime, timezone
 import logging
-from typing import List, Dict, Any
+from datetime import datetime, timezone
+from typing import Any, Dict, List
 
-from .config import config
-from .api_clients import CoinGeckoClient, ExchangeRateApiClient, BaseApiClient
-from .storage import save_rates_snapshot
 from valutatrade_hub.core.exceptions import ApiRequestError
+
+from .api_clients import BaseApiClient, CoinGeckoClient, ExchangeRateApiClient
+from .config import config
+from .storage import save_rates_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class RatesUpdater:
                     print(f"🟡 [Updater] {client_name}: получено 0 курсов")
                     continue
 
-                source = "CoinGecko" if "CoinGecko" in client_name else "ExchangeRate-API"
+                source = "CoinGecko" if "CoinGecko" in client_name else "ExchangeRate-API" # noqa: E501
 
                 for pair, rate in rates.items():
                     self.pairs[pair] = {
@@ -95,7 +96,7 @@ class RatesUpdater:
         # Сохраняем снимок
         try:
             if save_rates_snapshot(self.pairs, self.timestamp):
-                print(f"💾 [Updater] Успешно сохранено {len(self.pairs)} пар в rates.json")
+                print(f"💾 [Updater] Успешно сохранено {len(self.pairs)} пар в rates.json") # noqa: E501
                 success = True
             else:
                 print("❌ [Updater] Не удалось сохранить снимок")
@@ -103,7 +104,7 @@ class RatesUpdater:
             print(f"❌ [Updater] Ошибка при сохранении: {e}")
             logger.error(f"Ошибка при сохранении снимка: {e}")
 
-        print("✅ [Updater] Обновление завершено." if success else "⚠️ [Updater] Обновление частично неудачно.")
+        print("✅ [Updater] Обновление завершено." if success else "⚠️ [Updater] Обновление частично неудачно.") # noqa: E501
         return success
 
 

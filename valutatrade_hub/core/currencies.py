@@ -1,7 +1,7 @@
 # valutatrade_hub/core/currencies.py
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict
 
 # Базовый класс Currency и наследники Fiat/Crypto
 
@@ -15,7 +15,7 @@ class CurrencyNotFoundError(Exception):
     """
     def __init__(self, code: str):
         self.code = code
-        message = f"Валюта с кодом '{code}' не найдена. Проверьте правильность написания или используйте команду 'currencies' для просмотра доступных."
+        message = f"Валюта с кодом '{code}' не найдена. Проверьте правильность написания или используйте команду 'currencies' для просмотра доступных." # noqa: E501
         super().__init__(message)
 
 
@@ -28,8 +28,8 @@ class Currency(ABC):
         # Валидация
         if not name or not isinstance(name, str):
             raise ValueError("Имя валюты должно быть непустой строкой.")
-        if not isinstance(code, str) or not (2 <= len(code) <= 5) or " " in code or not code.isupper():
-            raise ValueError("Код валюты: 2–5 символов, только верхний регистр, без пробелов.")
+        if not isinstance(code, str) or not (2 <= len(code) <= 5) or " " in code or not code.isupper(): # noqa: E501
+            raise ValueError("Код валюты: 2–5 символов, только верхний регистр, без пробелов.") # noqa: E501
 
         self.name: str = name
         self.code: str = code
@@ -77,7 +77,7 @@ class CryptoCurrency(Currency):
     def get_display_info(self) -> str:
         # Форматируем капитализацию: 1.12e12
         mcap_str = f"{self.market_cap:.2e}"
-        return f"[CRYPTO] {self.code} — {self.name} (Algo: {self.algorithm}, MCAP: {mcap_str})"
+        return f"[CRYPTO] {self.code} — {self.name} (Algo: {self.algorithm}, MCAP: {mcap_str})" # noqa: E501
 
 # === Алиасы ДО функции get_currency ===
 CURRENCY_ALIASES = {

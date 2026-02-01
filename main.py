@@ -1,10 +1,10 @@
 # main.py
 
-import sys
+import threading
+
 from valutatrade_hub.cli.interface import main as cli_main
 from valutatrade_hub.logging_config import setup_logging
 from valutatrade_hub.parser_service.scheduler import start_scheduler
-import threading
 
 
 def main():

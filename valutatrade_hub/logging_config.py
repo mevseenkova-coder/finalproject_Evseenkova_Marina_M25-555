@@ -1,8 +1,8 @@
 # valutatrade_hub/logging_config.py
 
 import logging
-from logging.handlers import RotatingFileHandler
 import os
+from logging.handlers import RotatingFileHandler
 
 # Настройка логов (формат, уровень, ротация)
 
@@ -39,7 +39,7 @@ def setup_logging():
                 "result": getattr(record, "result", "OK")
             }
             # Добавляем остальные поля
-            for key in ["currency_code", "amount", "rate", "base", "error_type", "error_message", "balance_before", "balance_after"]:
+            for key in ["currency_code", "amount", "rate", "base", "error_type", "error_message", "balance_before", "balance_after"]: # noqa: E501
                 if hasattr(record, key):
                     log_entry[key] = getattr(record, key)
             return str(log_entry)

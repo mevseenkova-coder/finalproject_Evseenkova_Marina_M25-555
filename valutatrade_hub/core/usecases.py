@@ -1,15 +1,18 @@
 # valutatrade_hub/core/usecases.py
 
-import json
 import os
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Optional, List, Any
-from valutatrade_hub.core.models import User, Portfolio, Wallet
-from valutatrade_hub.decorators import log_action
-from valutatrade_hub.core.exceptions import InsufficientFundsError, CurrencyNotFoundError, UserAlreadyExistsError
-from valutatrade_hub.infra.database import DatabaseManager
-from valutatrade_hub.infra.settings import SettingsLoader
+from datetime import datetime
 from hashlib import pbkdf2_hmac
+from typing import List
+
+from valutatrade_hub.core.exceptions import (
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+    UserAlreadyExistsError,
+)
+from valutatrade_hub.core.models import Portfolio, User
+from valutatrade_hub.decorators import log_action
+from valutatrade_hub.infra.database import DatabaseManager
 
 # бизнес-логика
 # ДОПОЛНИТЬ: buy/sell/get-rate с исключениями и логированием
@@ -321,7 +324,8 @@ def get_portfolio(user_id: int) -> Portfolio:
 
 '''
 def get_portfolio(user: User) -> Portfolio:
-    print(f"\n🔍 get_portfolio: ищем портфель для user_id={user.user_id}, username={user.username}")
+    print(f"\n🔍 get_portfolio: ищем портфель для user_id={user.user_id}, 
+        username={user.username}") # noqa: E501
     
     portfolios = load_portfolios()
     print(f"📊 Загружено портфелей: {len(portfolios)}")
@@ -337,7 +341,8 @@ def get_portfolio(user: User) -> Portfolio:
         print(f"✅ Портфель найден")
 
     result = portfolios[user.user_id]
-    print(f"💼 Возвращаем портфель: user_id={result.user_id}, wallets={list(result._wallets.keys())}")
+    print(f"💼 Возвращаем портфель: user_id={result.user_id}, 
+        wallets={list(result._wallets.keys())}") # noqa: E501
     return result
 '''
 
@@ -363,7 +368,8 @@ def get_portfolio(user: User) -> Portfolio:
         print(f"✅ Портфель найден")
 
     result = portfolios[user.user_id]
-    print(f"💼 Возвращаем портфель: user_id={result.user_id}, wallets={list(result._wallets.keys())}")
+    print(f"💼 Возвращаем портфель: user_id={result.user_id}, 
+        wallets={list(result._wallets.keys())}") # noqa: E501
     return result
 '''
 '''
@@ -472,7 +478,7 @@ def get_exchange_rate(from_currency: str, to_currency: str) -> Optional[float]:
         if not pair_data:
             return None
 
-        updated_at = datetime.fromisoformat(pair_data["updated_at"].replace("Z", "+00:00"))
+        updated_at=datetime.fromisoformat(pair_data["updated_at"].replace("Z","+00:00"))
         now = datetime.now(timezone.utc)
         if now - updated_at > timedelta(seconds=ttl):
             return None  # устарело
@@ -540,7 +546,8 @@ def get_exchange_rate(from_curr: str, to_curr: str) -> float:
         return 1 / reverse["rate"]
 
     # Через USD
-    via_from_usd = pairs.get(f"{from_curr}_USD") or (1 / pairs[f"USD_{from_curr}"]["rate"] if f"USD_{from_curr}" in pairs else None)
+    via_from_usd=pairs.get(f"{from_curr}_USD") or (1/pairs[f"USD_{from_curr}"]["rate"] 
+        if f"USD_{from_curr}" in pairs else None) # noqa: E501
     via_to_usd = pairs.get(f"USD_{to_curr}")
 
     if via_from_usd and via_to_usd:
@@ -598,7 +605,8 @@ def buy_currency(portfolio, currency_code: str, amount: float, rate: float) -> N
     usd_cost = amount * rate
     usd_wallet = portfolio.get_wallet('USD')
     if not usd_wallet or usd_wallet.balance < usd_cost:
-        raise InsufficientFundsError(available=usd_wallet.balance if usd_wallet else 0, required=usd_cost, code='USD')
+        raise InsufficientFundsError(available=usd_wallet.balance if usd_wallet else 0, 
+            required=usd_cost, code='USD') # noqa: E501
 
     portfolio.add_currency(currency_code, amount)
     usd_wallet.withdraw(usd_cost)

@@ -1,9 +1,9 @@
 # valutatrade_hub/core/models.py
 
 import hashlib
-import json
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, Optional
+
 from valutatrade_hub.core.currencies import get_currency
 
 # реализация классов
@@ -29,7 +29,7 @@ class User:
             raise ValueError("Имя пользователя не может быть пустым.")
     
     @classmethod
-    def create_user(cls, user_id: int, username: str, password: str, salt: str, registration_date: datetime) -> 'User':
+    def create_user(cls, user_id: int, username: str, password: str, salt: str, registration_date: datetime) -> 'User': # noqa: E501
         """
         Фабричный метод: создаёт пользователя, хэшируя переданный пароль.
         """
@@ -86,7 +86,7 @@ class User:
         if len(new_password) < 4:
             raise ValueError("Пароль должен быть не короче 4 символов.")
         salted_password = new_password + self._salt
-        self._hashed_password = hashlib.sha256(salted_password.encode('utf-8')).hexdigest()
+        self._hashed_password = hashlib.sha256(salted_password.encode('utf-8')).hexdigest() # noqa: E501
 
     def get_user_info(self) -> Dict[str, Any]:
         """Возвращает публичную информацию о пользователе."""
@@ -123,7 +123,8 @@ class User:
 
 '''
 class User:
-    def __init__(self, user_id: int, username: str, password: str, salt: str, registration_date: datetime):
+    def __init__(self, user_id: int, username: str, password: str, salt: str, 
+            registration_date: datetime): # noqa: E501
         self._user_id = user_id
         self._username = username
         self._salt = salt
@@ -207,7 +208,7 @@ class User:
             salt=data['salt'],
             registration_date=datetime.fromisoformat(data['registration_date'])
         )
-        # Но Чтобы не передавать dummy, лучше — отдельный метод или хранить пароль отдельно
+        # Чтобы не передавать dummy, лучше — отдельный метод или хранить пароль отдельно
         # Альтернатива: добавим флаг skip_hash
 
     @classmethod
@@ -224,7 +225,7 @@ class User:
 
 class Wallet:
     def __init__(self, currency_code: str, initial_balance: float = 0.0):
-        print(f"🔧 Создаём Wallet: currency_code={currency_code}, initial_balance={initial_balance}")
+        print(f"🔧 Создаём Wallet: currency_code={currency_code}, initial_balance={initial_balance}") # noqa: E501
         self._currency_code = currency_code.strip().upper()
         self._balance = 0.0
         # Используем сеттер для валидации начального баланса
@@ -256,17 +257,18 @@ class Wallet:
         self._validate_amount(amount)
         self._balance += amount
         self._balance = round(self._balance, 6)
-        print(f"Пополнение: +{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}")
+        print(f"Пополнение: +{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}") # noqa: E501
 
     def withdraw(self, amount: float) -> None:
         """Снятие средств, если достаточно средств"""
         self._validate_amount(amount)
         if amount > self._balance:
-            # raise ValueError(f"Недостаточно средств. Доступно: {self.balance} {self._currency_code}")
-            raise InsufficientFundsError(available=self._balance, required=amount, code=self._currency_code)
+            # raise ValueError(f"Недостаточно средств. Доступно: {self.balance} 
+            # {self._currency_code}") --unsafe-fixes
+            raise InsufficientFundsError(available=self._balance, required=amount, code=self._currency_code) # noqa: E501
         self._balance -= amount
         self._balance = round(self._balance, 6)
-        print(f"Снятие: -{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}")
+        print(f"Снятие: -{amount} {self._currency_code}. Текущий баланс: {self._balance} {self._currency_code}") # noqa: E501
 
     def get_balance_info(self) -> Dict[str, float]:
         """Возвращает информацию о балансе"""
@@ -320,7 +322,7 @@ class Portfolio:
         if wallets:
             for currency, wallet in wallets.items():
                 if not isinstance(wallet, Wallet):
-                    raise TypeError(f"Объект для валюты {currency} должен быть экземпляром Wallet.")
+                    raise TypeError(f"Объект для валюты {currency} должен быть экземпляром Wallet.") # noqa: E501
                 self._wallets[currency.upper()] = wallet
 
     # === Свойства ===
@@ -343,7 +345,7 @@ class Portfolio:
             raise ValueError(f"Валюта {currency_code} уже есть в портфеле.")
 
         if not currency_code.isalpha() or len(currency_code) != 3:
-            raise ValueError("Код валюты должен быть трёхбуквенным (например, USD, BTC).")
+            raise ValueError("Код валюты должен быть трёхбуквенным (например, USD, BTC).") # noqa: E501
 
         wallet = Wallet(currency_code=currency_code, initial_balance=initial_balance)
         self._wallets[currency_code] = wallet
@@ -379,7 +381,10 @@ class Portfolio:
         Возвращает общую стоимость портфеля в указанной базовой валюте.
         Использует get_exchange_rate из usecases.
         """
-        from valutatrade_hub.core.usecases import get_exchange_rate, CurrencyNotFoundError
+        from valutatrade_hub.core.usecases import (
+            CurrencyNotFoundError,
+            get_exchange_rate,
+        )
 
         base_currency = base_currency.strip().upper()
 
@@ -395,7 +400,7 @@ class Portfolio:
         return total
 
     # === Операции с портфелем ===
-    def buy_currency(self, currency_code: str, amount: float, price_in_usd: float) -> None:
+    def buy_currency(self, currency_code: str, amount: float, price_in_usd: float) -> None: # noqa: E501
         """
         Покупка валюты: списание USD, пополнение кошелька валюты.
         price_in_usd — сколько стоит одна единица валюты в USD.
@@ -409,7 +414,7 @@ class Portfolio:
 
         total_cost = amount * price_in_usd
         if usd_wallet.balance < total_cost:
-            raise ValueError(f"Недостаточно средств в USD. Требуется: {total_cost}, доступно: {usd_wallet.balance}")
+            raise ValueError(f"Недостаточно средств в USD. Требуется: {total_cost}, доступно: {usd_wallet.balance}") # noqa: E501
 
         # Списываем USD
         usd_wallet.withdraw(total_cost)
@@ -422,9 +427,9 @@ class Portfolio:
         wallet = self.get_wallet(currency_code)
         wallet.deposit(amount)
 
-        print(f"Куплено {amount} {currency_code} по цене {price_in_usd} USD за единицу.")
+        print(f"Куплено {amount} {currency_code} по цене {price_in_usd} USD за единицу.") # noqa: E501
 
-    def sell_currency(self, currency_code: str, amount: float, price_in_usd: float) -> None:
+    def sell_currency(self, currency_code: str, amount: float, price_in_usd: float) -> None: # noqa: E501
         """
         Продажа валюты: списание из кошелька, зачисление на USD.
         """
@@ -451,14 +456,14 @@ class Portfolio:
         revenue = amount * price_in_usd
         usd_wallet.deposit(revenue)
 
-        print(f"Продано {amount} {currency_code} по цене {price_in_usd} USD за единицу.")
+        print(f"Продано {amount} {currency_code} по цене {price_in_usd} USD за единицу.") # noqa: E501
            
     # === JSON сериализация ===
     def to_dict(self) -> Dict:
         """Подготовка к сохранению в JSON"""
         return {
             "user_id": self._user_id,
-            "wallets": {code: wallet.to_dict() for code, wallet in self._wallets.items()}
+            "wallets": {code: wallet.to_dict() for code, wallet in self._wallets.items()} # noqa: E501
         }
 
     @classmethod
@@ -470,5 +475,5 @@ class Portfolio:
         return cls(user_id=data['user_id'], wallets=wallets)
 
     def __repr__(self):
-        wallets_str = ", ".join(f"{code}: {wallet.balance}" for code, wallet in self.wallets.items())
+        wallets_str = ", ".join(f"{code}: {wallet.balance}" for code, wallet in self.wallets.items()) # noqa: E501
         return f"Portfolio(user_id={self.user_id}, wallets={{{wallets_str}}})"

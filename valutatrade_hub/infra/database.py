@@ -3,12 +3,14 @@
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
 
-from valutatrade_hub.core.models import User, Portfolio, Wallet
-from valutatrade_hub.infra.settings import SettingsLoader
 # infra/database.py
 from pathlib import Path
+from typing import Dict, List, Tuple
+
+from valutatrade_hub.core.models import Portfolio, User
+from valutatrade_hub.infra.settings import SettingsLoader
+
 
 class JsonDatabase:
     def __init__(self, filepath: str):
@@ -32,7 +34,8 @@ class DatabaseManager:
         data_dir = self.settings.get("data_dir", "data")
 
         # Преобразуем в абсолютный путь: если относительный — считаем от корня проекта
-        project_root = Path(__file__).parent.parent.parent # valutatrade_hub → finalproject_...
+        project_root = Path(__file__).parent.parent.parent 
+        # valutatrade_hub → finalproject_...
         self.data_dir = str(project_root / data_dir)
 
         os.makedirs(self.data_dir, exist_ok=True)
@@ -133,7 +136,8 @@ class DatabaseManager:
         if user_id in portfolios:
             return portfolios[user_id]
 
-        print(f"🔧 Портфель для user_id={user_id} не найден — создаём новый с начальным капиталом")
+        print(f"🔧 Портфель для user_id={user_id} не найден — создаём новый 
+            с начальным капиталом") # noqa: E501
         portfolio = Portfolio(user_id=user_id)
 
         # Добавляем стартовый капитал
@@ -152,7 +156,8 @@ class DatabaseManager:
         if user_id in portfolios:
             return portfolios[user_id]
 
-        print(f"🔧 Портфель для user_id={user_id} не найден — создаём новый с начальным капиталом")
+        print(f"🔧 Портфель для user_id={user_id} не найден — создаём новый 
+            с начальным капиталом") # noqa: E501
         portfolio = Portfolio(user_id=user_id)
 
         # Добавляем стартовый капитал
@@ -182,7 +187,7 @@ class DatabaseManager:
     def save_portfolio(self, portfolio: Portfolio):
         portfolios = self.load_portfolios()
         portfolios[portfolio.user_id] = portfolio
-        self._safe_write(self.portfolios_file, [p.to_dict() for p in portfolios.values()])
+        self._safe_write(self.portfolios_file, [p.to_dict() for p in portfolios.values()]) # noqa: E501
 
     '''
     def load_rates(self) -> Dict[str, float]:
@@ -196,7 +201,8 @@ class DatabaseManager:
         try:
             with open(self.rates_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            last_updated = datetime.fromisoformat(data.get("last_updated", now.isoformat()))
+            last_updated = datetime.fromisoformat(data.get("last_updated", 
+                now.isoformat())) # noqa: E501
             if now - last_updated > timedelta(seconds=ttl):
                 print("🕒 Курсы устарели — нужно обновить")
                 return self._default_rates()  # или бросить исключение, если нужно
@@ -266,8 +272,10 @@ class DatabaseManager:
         """
         Возвращает словарь: {"USD": 1.0, "EUR": 1.0786, "RUB": 75.9557, "BTC": 59337.21}
         Учитывает:
-        - Для фиата: RUB_USD: 75.9557 → это означает 1 USD = 75.9557 RUB → значит, курс RUB = 75.9557
-        - Для крипты: BTC_USD: 59337.21 → 1 BTC = 59337.21 USD → значит, курс BTC = 59337.21
+        - Для фиата: RUB_USD: 75.9557 → это означает 1 USD = 75.9557 RUB → значит, 
+        курс RUB = 75.9557
+        - Для крипты: BTC_USD: 59337.21 → 1 BTC = 59337.21 USD → значит, 
+        курс BTC = 59337.21
         """
         print(f"📂 [load] Чтение из: {self.rates_file}")
         if not os.path.exists(self.rates_file):
@@ -304,12 +312,13 @@ class DatabaseManager:
 
             # Если пара заканчивается на _USD
             if to_curr == "USD":
-                if from_curr in {"BTC", "ETH", "SOL", "ADA", "DOT", "BNB", "XRP", "AVAX", "LINK"}:
+                if from_curr in {"BTC", "ETH", "SOL", "ADA", "DOT", "BNB", "XRP", "AVAX", "LINK"}: # noqa: E501
                     # Криптовалюты: BTC_USD = 59337 → 1 BTC = 59337 USD
                     rates[from_curr] = rate
                 else:
-                    # Фиат: RUB_USD = 75.9557 → это НА САМОМ ДЕЛЕ означает: 1 USD = 75.9557 RUB
-                    # → значит, курс RUB (сколько RUB за 1 USD) = 75.9557
+                    """ Фиат: RUB_USD = 75.9557 → это НА САМОМ ДЕЛЕ означает: 
+                    1 USD = 75.9557 RUB
+                    → значит, курс RUB (сколько RUB за 1 USD) = 75.9557 """
                     rates[from_curr] = rate  # Да, сохраняем как есть: RUB = 75.9557
             # Если пара USD_XXX — например, USD_EUR = 0.8407
             elif from_curr == "USD":
@@ -365,7 +374,7 @@ class DatabaseManager:
             with open(self.rates_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             last_updated_str = data.get("last_updated")
-            last_updated = datetime.fromisoformat(last_updated_str) if last_updated_str else now
+            last_updated = datetime.fromisoformat(last_updated_str) if last_updated_str else now # noqa: E501
 
             if now - last_updated > timedelta(seconds=ttl):
                 print("🕒 Курсы устарели — нужно обновить")

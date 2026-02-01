@@ -16,7 +16,7 @@ class InsufficientFundsError(ValutaTradeError):
         self.available = available
         self.required = required
         self.code = code
-        message = f"Недостаточно средств: доступно {available:,.6f} {code}, требуется {required:,.6f} {code}"
+        message = f"Недостаточно средств: доступно {available:,.6f} {code}, требуется {required:,.6f} {code}" # noqa: E501
         super().__init__(message)
 
 
@@ -63,5 +63,6 @@ class ParsingError(Exception):
 
 
 class StorageError(Exception):
-    """Исключение: при сохранении или чтении данных (например, не удалось записать в файл)"""
+    """Исключение: при сохранении или чтении данных 
+    (например, не удалось записать в файл)"""
     pass

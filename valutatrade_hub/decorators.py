@@ -3,7 +3,7 @@
 import functools
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 # @log_action (логирование операций)
 
@@ -28,7 +28,7 @@ def log_action(action_name: str, verbose: bool = False):
             }
 
             # Извлекаем параметры из kwargs (ожидаем: currency_code, amount, rate, base)
-            currency_code = kwargs.get("currency_code") or (args[1] if len(args) > 1 else None)
+            currency_code = kwargs.get("currency_code") or (args[1] if len(args) > 1 else None) # noqa: E501
             amount = kwargs.get("amount") or (args[2] if len(args) > 2 else None)
             rate = kwargs.get("rate")
             base = kwargs.get("base", "USD")
@@ -41,7 +41,8 @@ def log_action(action_name: str, verbose: bool = False):
                 log_data["rate"] = float(rate)
             log_data["base"] = base.upper()
 
-            # Если verbose — можно добавить баланс (пример: передаём wallet в kwargs или через контекст)
+            # Если verbose — можно добавить баланс 
+            # (пример: передаём wallet в kwargs или через контекст)
             # Пока оставим заглушку — можно расширить позже
             if verbose and "wallet" in kwargs:
                 wallet = kwargs["wallet"]

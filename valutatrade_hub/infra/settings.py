@@ -1,11 +1,12 @@
 # valutatrade_hub/infra/settings.py
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
 import toml
 from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     data_dir: str = "data"
@@ -45,7 +46,8 @@ class SettingsLoader:
     def _load_settings(self):
         """Загружает настройки из доступных источников."""
         # Определяем корень проекта — две папки вверх от __file__
-        project_root = Path(__file__).parent.parent.parent  # valutatrade_hub → finalproject_...
+        project_root = Path(__file__).parent.parent.parent  
+        # valutatrade_hub → finalproject_...
 
         # Приоритет 1: config.json в корне
         config_path = project_root / "config.json"
