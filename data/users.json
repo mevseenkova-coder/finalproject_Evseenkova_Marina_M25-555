@@ -89,5 +89,12 @@
     "hashed_password": "9b0a48eeba8e1f38193c33126b9f8c367be20999e7dcb54eb39d1f85b57e1890",
     "salt": "aonN857Sh_E",
     "registration_date": "2026-02-01T23:52:49.946185"
+  },
+  {
+    "user_id": 15,
+    "username": "Марина11",
+    "hashed_password": "734a4f713cb485666b0d369b7fa25d29d49b27bf690e0d2e0b9df17fed8fd15b",
+    "salt": "rxTA01W9O3I",
+    "registration_date": "2026-02-02T00:07:28.893536"
   }
 ]

@@ -43,3 +43,31 @@ with open(config_path, "rb") as f:  # Важно: режим 'rb' для tomllib
 git clone https://github.com/ваше-имя/finalproject_Evseenkova_Marina_M25-555.git
 cd finalproject_Evseenkova_Marina_M25-555
 poetry install
+
+Инструкции по установке (poetry install или make install) и запуску (poetry run project или make project).
+Чтобы установить poetry, напишите команду sudo apt install python3-poetry
+Активируйте виртуальное окружение командами: poetry env activate
+После этого у вас в терминале появится что то похожее (только с вашими данными, ниже это пример!):
+C:\Users\пользователь\projects\github\finalproject_Evseenkova_Marina_M25-555\finalproject_Evseenkova_Marina_M25-555\.venv\Scripts\activate.ps1 
+
+Чтобы запустить poetry, напишите команду poetry run python -m labyrinth_game.main 
+Альтернативный вариант:
+    Выполните установку пакета с помощью команды: poetry install 
+    Poetry создаст виртуальное окружение и установит в него пакет.
+    После успешной установки пакета проверьте, что скрипт работает: poetry run project  
+
+poetry install создаёт виртуальное окружение и устанавливает зависимости из pyproject.toml.
+make install — это удобная оболочка для poetry install, если в проекте есть Makefile.
+
+poetry run project активирует виртуальное окружение и запускает команду.
+make project — это ярлык для poetry run project, если в Makefile определена соответствующая команда.
+
+asciinema с демонстрацией работы приложения: 
+{"id":777748,
+"message":"View the recording at:\n\n    https://asciinema.org/a/KRoJYPHxUtZXEdY7\n",
+"description":null,
+"title":"mevseenkova",
+"url":"https://asciinema.org/a/KRoJYPHxUtZXEdY7",
+"visibility":"unlisted",
+"audio_url":null,
+"file_url":"https://asciinema.org/a/KRoJYPHxUtZXEdY7.cast"}

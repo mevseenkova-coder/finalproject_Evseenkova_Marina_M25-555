@@ -2,99 +2,99 @@
   "pairs": {
     "EUR_USD": {
       "rate": 0.8407,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "GBP_USD": {
       "rate": 0.7286,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "RUB_USD": {
       "rate": 75.9557,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "JPY_USD": {
       "rate": 154.3136,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "CAD_USD": {
       "rate": 1.3568,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "AUD_USD": {
       "rate": 1.4317,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "CHF_USD": {
       "rate": 0.7709,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "CNY_USD": {
       "rate": 6.9657,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "INR_USD": {
       "rate": 91.9262,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "BRL_USD": {
       "rate": 5.2038,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "ExchangeRate-API"
     },
     "BTC_USD": {
-      "rate": 77093.0,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 76576.0,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "ETH_USD": {
-      "rate": 2314.76,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 2295.65,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "SOL_USD": {
-      "rate": 101.92,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 100.87,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "ADA_USD": {
-      "rate": 0.287978,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 0.286357,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "DOT_USD": {
-      "rate": 1.51,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 1.5,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "BNB_USD": {
-      "rate": 757.36,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 752.76,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "XRP_USD": {
-      "rate": 1.6,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 1.59,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "AVAX_USD": {
-      "rate": 9.94,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 9.89,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     },
     "LINK_USD": {
-      "rate": 9.56,
-      "updated_at": "2026-02-01T20:55:42Z",
+      "rate": 9.48,
+      "updated_at": "2026-02-01T21:10:38Z",
       "source": "CoinGecko"
     }
   },
-  "last_updated": "2026-02-01T20:55:42Z"
+  "last_updated": "2026-02-01T21:10:38Z"
 }
